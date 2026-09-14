@@ -17,8 +17,10 @@ function focusables() {
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
 }
 
-function move(dir) {
+// Déplacement vers l'élément le plus proche dans la direction, éventuellement limité aux éléments correspondant à `only`
+function move(dir, only) {
   var list = focusables();
+  if (only) list = list.filter(function (el) { return el.matches(only); });
   var cur = document.activeElement;
   if (list.indexOf(cur) < 0) { if (list[0]) list[0].focus(); return; }
   var r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;

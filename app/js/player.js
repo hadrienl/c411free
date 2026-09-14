@@ -477,12 +477,13 @@ function playerKey(e) {
     case KEY.LEFT:
     case KEY.RIGHT:
       if (onBar) debug('info', 'lecteur : touche barre', { key: code, repeat: !!e.repeat, maintenue: player.holdDir });
-      if (osdHidden) seek(code === KEY.LEFT ? -SEEK_STEP_S : SEEK_STEP_S);
-      else if (onBar) startScrubHold(code === KEY.LEFT ? -1 : 1);
-      else move(code === KEY.LEFT ? 'left' : 'right');
+      // Contrôles masqués : ◀ ▶ reculent / avancent sans afficher les contrôles
+      if (osdHidden) { seek(code === KEY.LEFT ? -SEEK_STEP_S : SEEK_STEP_S); return; }
+      if (onBar) startScrubHold(code === KEY.LEFT ? -1 : 1);
+      else move(code === KEY.LEFT ? 'left' : 'right', '#controls [data-f]'); // la barre de lecture ne se sélectionne qu'avec ▲
       break;
     case KEY.UP:
-      if (!osdHidden && !onBar) move('up'); // des boutons vers la barre de lecture
+      if (!osdHidden && !onBar) $('seekbar').focus(); // des boutons vers la barre de lecture
       break;
     case KEY.DOWN:
       if (onBar) { scrubCancel(); $('ctl-play').focus(); }
