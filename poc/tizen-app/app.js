@@ -59,7 +59,7 @@ function show(screen, focusEl) {
 }
 
 function focusables() {
-  var scope = '.screen.active [data-f]';
+  var scope = modalOpen() ? '#modal [data-f]' : '.screen.active [data-f]';
   if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
 }
@@ -83,6 +83,15 @@ function move(dir) {
 
 document.addEventListener('keydown', function (e) {
   var el = document.activeElement;
+  // Fenêtre modale ouverte : navigation limitée à ses boutons, RETOUR la ferme
+  if (modalOpen()) {
+    e.preventDefault();
+    if (e.keyCode === KEY.BACK) closeModal();
+    else if (e.keyCode === KEY.UP) move('up');
+    else if (e.keyCode === KEY.DOWN) move('down');
+    else if (e.keyCode === KEY.ENTER && el && el.hasAttribute('data-f')) el.click();
+    return;
+  }
   if (state.screen === 'player') { playerKey(e); return; }
   // Saisie dans le vrai champ (clavier Samsung) : il garde les flèches, on ne gère que valider / annuler
   if (el && el.id === 'query') {
@@ -429,6 +438,7 @@ function isPlayable(t) { return t.rx_pct >= 10000 && (t.status === 'done' || t.s
 // Médias : vidéos des disques (films et dossiers d'épisodes), avec la progression des téléchargements associés
 function renderDownloads() {
   var focusedId = document.activeElement && document.activeElement.getAttribute('data-id');
+  var focusedMore = document.activeElement && document.activeElement.getAttribute('data-more-id');
   var media = state.media;
   var list = media.entries.map(function (m, i) { return { m: m, i: i }; })
     .sort(function (a, b) { return SORTS[state.dlSort](a.m, b.m); });
@@ -453,9 +463,11 @@ function renderDownloads() {
       + (t
         ? '<div class="progress' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div><span class="pct">' + pct.toFixed(0) + ' %</span>'
         : '<div class="progress" style="visibility:hidden"></div><span class="pct"></span>')
+      + '<span class="more-btn" data-f tabindex="-1" id="more-' + x.i + '" data-more-id="' + x.i + '">⋯</span>'
       + '</div>';
   }).join('') || '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : 'Aucune vidéo trouvée.') + '</div>';
-  if (focusedId && $('dl-' + focusedId)) $('dl-' + focusedId).focus();
+  if (focusedMore && $('more-' + focusedMore)) $('more-' + focusedMore).focus();
+  else if (focusedId && $('dl-' + focusedId)) $('dl-' + focusedId).focus();
 }
 
 // Index des vidéos : cache immédiat, réanalyse des disques en arrière-plan (au plus toutes les 10 min,
@@ -551,6 +563,165 @@ async function onTaskClick(index) {
   state.filesTask = { task: owner, files: m.files };
   renderFiles();
   showFiles();
+}
+
+// ---------- Menu « ⋯ » et suppression ----------
+var modalState = { buttons: [], returnFocusId: null };
+
+function modalOpen() { return $('modal').classList.contains('open'); }
+
+// Fenêtre modale : { title, text, warn, buttons: [{ label, danger, focus, action }] }
+function openModal(opts) {
+  if (!modalOpen()) modalState.returnFocusId = document.activeElement && document.activeElement.id;
+  modalState.buttons = opts.buttons || [];
+  $('modal-title').textContent = opts.title || '';
+  $('modal-text').textContent = opts.text || '';
+  $('modal-warn').textContent = opts.warn || '';
+  $('modal-warn').style.display = opts.warn ? 'block' : 'none';
+  $('modal-buttons').innerHTML = modalState.buttons.map(function (b, i) {
+    return '<span class="btn' + (b.danger ? ' danger' : '') + '" data-f tabindex="-1" id="modal-btn-' + i + '" data-modal-btn="' + i + '">' + esc(b.label) + '</span>';
+  }).join('');
+  $('modal').classList.add('open');
+  var focusIndex = Math.max(0, modalState.buttons.findIndex(function (b) { return b.focus; }));
+  if ($('modal-btn-' + focusIndex)) $('modal-btn-' + focusIndex).focus();
+}
+
+function closeModal() {
+  $('modal').classList.remove('open');
+  var back = modalState.returnFocusId && $(modalState.returnFocusId);
+  modalState.returnFocusId = null;
+  if (back) back.focus();
+}
+
+$('modal-buttons').addEventListener('click', function (e) {
+  var el = e.target.closest('[data-modal-btn]');
+  if (!el) return;
+  var b = modalState.buttons[Number(el.getAttribute('data-modal-btn'))];
+  if (b && b.action) b.action(); else closeModal();
+});
+
+// Décision de suppression (fonction pure, testable) :
+//  - média associé à un ou plusieurs téléchargements → suppression du téléchargement (avec ou sans les fichiers) ;
+//  - sinon → suppression des fichiers / dossiers calculés par Media.deletionTargets.
+function deletePlan(m, tasks, grouped, nowMs) {
+  var related = Media.tasksFor(m, tasks);
+  if (related.length) {
+    var young = related.filter(function (t) { return t.status === 'seeding' && nowMs / 1000 - t.created_ts < 48 * 3600; });
+    var hours = young.length ? Math.floor(Math.min.apply(null, young.map(function (t) { return nowMs / 1000 - t.created_ts; })) / 3600) : 0;
+    return {
+      mode: 'download', tasks: related,
+      warn: young.length ? '⚠️ Partage en cours depuis ' + hours + ' h : c411 demande au moins 48 h de partage (ratio).' : ''
+    };
+  }
+  return { mode: 'files', targets: Media.deletionTargets(m, grouped) };
+}
+
+function describeTargets(m, targets) {
+  var isFile = function (p) { return m.files.some(function (f) { return f.path === p; }); };
+  if (targets.length === 1) {
+    var name = targets[0].split('/').pop();
+    return isFile(targets[0])
+      ? 'Le fichier « ' + name + ' » sera supprimé du disque.'
+      : 'Le dossier « ' + name + ' » et tout son contenu seront supprimés du disque.';
+  }
+  return targets.length + ' éléments seront supprimés du disque :\n'
+    + targets.slice(0, 4).map(function (p) { return '• ' + p.split('/').pop(); }).join('\n')
+    + (targets.length > 4 ? '\n• … et ' + (targets.length - 4) + ' autre(s)' : '');
+}
+
+function openMediaMenu(index) {
+  var m = state.media.entries[index];
+  if (!m) return;
+  openModal({
+    title: label(m.name),
+    text: m.kind === 'folder' ? m.files.length + ' vidéos · ' + gb(m.size) : gb(m.size),
+    buttons: [
+      { label: '🗑 Supprimer…', danger: true, action: function () { confirmDelete(m); } },
+      { label: 'Annuler', action: closeModal }
+    ]
+  });
+}
+
+function confirmDelete(m) {
+  var plan = deletePlan(m, state.tasks, state.media.grouped, Date.now());
+  if (plan.mode === 'download') {
+    var n = plan.tasks.length;
+    openModal({
+      title: n > 1 ? 'Supprimer les ' + n + ' téléchargements ?' : 'Supprimer le téléchargement ?',
+      text: label(m.name),
+      warn: plan.warn,
+      buttons: [
+        { label: '🗑 Supprimer le téléchargement et les fichiers', danger: true, action: function () { runDelete(m, function () { return deleteDownloads(plan.tasks, true); }, plan.tasks.map(Media.taskPath)); } },
+        { label: 'Supprimer uniquement le téléchargement (garder les fichiers)', action: function () { runDelete(m, function () { return deleteDownloads(plan.tasks, false); }, []); } },
+        { label: 'Annuler', focus: true, action: closeModal }
+      ]
+    });
+  } else if (!plan.targets.length) {
+    toast('Rien à supprimer pour ce média.');
+    closeModal();
+  } else {
+    openModal({
+      title: 'Supprimer définitivement ?',
+      text: label(m.name) + '\n\n' + describeTargets(m, plan.targets),
+      buttons: [
+        { label: '🗑 Supprimer', danger: true, action: function () { runDelete(m, function () { return deleteFiles(plan.targets); }, plan.targets); } },
+        { label: 'Annuler', focus: true, action: closeModal }
+      ]
+    });
+  }
+}
+
+async function deleteDownloads(tasks, withFiles) {
+  for (var i = 0; i < tasks.length; i++) {
+    await fbx('/downloads/' + tasks[i].id + (withFiles ? '/erase' : ''), { method: 'DELETE' });
+  }
+}
+
+// Suppression de fichiers / dossiers : tâche asynchrone de la Freebox, suivie jusqu'à la fin puis nettoyée
+async function deleteFiles(paths) {
+  var task = await fbx('/fs/rm/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: paths.map(function (p) { return Media.utf8ToB64(p); }) }) });
+  var started = Date.now();
+  while (task && task.state !== 'done' && task.state !== 'failed') {
+    if (Date.now() - started > 120000) throw new Error('la suppression prend trop de temps');
+    await new Promise(function (resolve) { setTimeout(resolve, 500); });
+    task = await fbx('/fs/tasks/' + task.id);
+  }
+  if (task) fbx('/fs/tasks/' + task.id, { method: 'DELETE' }).catch(function () {});
+  if (task && task.state === 'failed') throw new Error('la Freebox a refusé (' + task.error + ')');
+}
+
+// Retire de l'index les vidéos situées sous les chemins supprimés, puis regroupe
+function removeFromIndex(paths) {
+  var media = state.media;
+  var gone = function (p) { return paths.some(function (d) { return p === d || p.indexOf(d + '/') === 0; }); };
+  var videos = [];
+  media.grouped.forEach(function (x) { x.files.forEach(function (f) { if (!gone(f.path)) videos.push(f); }); });
+  media.grouped = Media.group(videos);
+  Media.saveCache(videos);
+  updateMediaEntries();
+}
+
+var deleting = false;
+async function runDelete(m, operation, removedPaths) {
+  if (deleting) return;
+  deleting = true;
+  closeModal();
+  toast('Suppression en cours…');
+  try {
+    await operation();
+    if (removedPaths.length) removeFromIndex(removedPaths);
+    await refreshDownloads();
+    toast('🗑 Supprimé : ' + label(m.name));
+    debug('info', 'média supprimé', { chemins: removedPaths.length });
+  } catch (e) {
+    toast('Suppression impossible : ' + e.message, true);
+  } finally {
+    deleting = false;
+    if (state.screen === 'downloads' && !$('downloads-list').contains(document.activeElement)) {
+      var first = $('downloads-list').querySelector('[data-f]');
+      if (first) first.focus();
+    }
+  }
 }
 
 function renderFiles() {
@@ -1304,6 +1475,8 @@ $('dl-sorts').addEventListener('click', function (e) {
   $('downloads-list').parentNode.scrollTop = 0;
 });
 $('downloads-list').addEventListener('click', function (e) {
+  var more = e.target.closest('[data-more-id]');
+  if (more) { openMediaMenu(Number(more.getAttribute('data-more-id'))); return; }
   var row = e.target.closest('[data-id]');
   if (row) onTaskClick(Number(row.getAttribute('data-id')));
 });

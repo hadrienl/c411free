@@ -187,7 +187,39 @@ var Media = (function () {
     return (last === name ? dir : dir + '/' + name).replace(/\/+/g, '/');
   }
 
-  // Associe chaque média au téléchargement correspondant (même chemin, ou vidéos contenues dans le dossier téléchargé) ;
+  // Un média relève d'un téléchargement : même chemin, ou vidéos contenues dans le dossier téléchargé
+  function covers(entry, tp) {
+    return entry.path === tp || entry.path.indexOf(tp + '/') === 0
+      || entry.files.some(function (f) { return f.path === tp || f.path.indexOf(tp + '/') === 0; });
+  }
+
+  // Tous les téléchargements d'un média (un dossier regroupé peut en couvrir plusieurs, ex. 5 épisodes)
+  function tasksFor(entry, tasks) {
+    if (entry.kind === 'task') return entry.task ? [entry.task] : [];
+    return (tasks || []).filter(function (t) { return covers(entry, taskPath(t)); });
+  }
+
+  // Chemins à supprimer pour un média sans téléchargement :
+  //  - dossier réel ne contenant que les vidéos du média → ce dossier ;
+  //  - sinon chaque vidéo, ou son dossier si elle y est seule (fichiers annexes .nfo… compris) ;
+  //  - jamais la racine ni un disque entier.
+  function deletionTargets(entry, allEntries) {
+    var videoPaths = [];
+    allEntries.forEach(function (m) { m.files.forEach(function (f) { videoPaths.push(f.path); }); });
+    var depth = function (p) { return p.split('/').filter(Boolean).length; };
+    var videosUnder = function (dir) { return videoPaths.filter(function (p) { return p.indexOf(dir + '/') === 0; }).length; };
+    var realFolder = entry.kind === 'folder' && entry.files.every(function (f) { return f.path.indexOf(entry.path + '/') === 0; });
+    if (realFolder && depth(entry.path) >= 2 && videosUnder(entry.path) === entry.files.length) return [entry.path];
+    var targets = [];
+    entry.files.forEach(function (f) {
+      var parent = f.path.slice(0, f.path.lastIndexOf('/'));
+      var target = depth(parent) >= 2 && videosUnder(parent) === 1 ? parent : f.path;
+      if (targets.indexOf(target) < 0) targets.push(target);
+    });
+    return targets;
+  }
+
+  // Associe chaque média au téléchargement correspondant ;
   // les téléchargements en cours absents de l'index sont ajoutés pour afficher leur progression.
   function attachTasks(entries, tasks) {
     var matched = {};
@@ -195,9 +227,7 @@ var Media = (function () {
     (tasks || []).forEach(function (t) {
       var tp = taskPath(t);
       entries.forEach(function (m) {
-        var inside = m.path === tp || m.path.indexOf(tp + '/') === 0
-          || m.files.some(function (f) { return f.path === tp || f.path.indexOf(tp + '/') === 0; });
-        if (!inside) return;
+        if (!covers(m, tp)) return;
         matched[t.id] = true;
         if (!m.task || t.created_ts > m.task.created_ts) m.task = t;
       });
@@ -216,5 +246,8 @@ var Media = (function () {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), videos: videos })); } catch (e) { /* stockage plein ou indisponible */ }
   }
 
-  return { scan: scan, group: group, attachTasks: attachTasks, taskPath: taskPath, loadCache: loadCache, saveCache: saveCache, utf8ToB64: utf8ToB64 };
+  return {
+    scan: scan, group: group, attachTasks: attachTasks, taskPath: taskPath, tasksFor: tasksFor, deletionTargets: deletionTargets,
+    loadCache: loadCache, saveCache: saveCache, utf8ToB64: utf8ToB64
+  };
 })();
