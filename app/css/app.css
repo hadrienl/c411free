@@ -250,3 +250,11 @@ html, body {
 /* « Épisode suivant » : verre clair, lisible sur la vidéo */
 #next-episode { background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(226, 232, 240, .88)); border-width: 2px; padding: 22px 42px; border-radius: 20px; box-shadow: inset 0 1px 1px #fff, 0 12px 32px rgba(0, 0, 0, .45); }
 #next-episode:focus { border-color: rgba(59, 130, 246, .9); box-shadow: inset 0 1px 1px #fff, 0 0 0 1px rgba(255, 255, 255, .5), 0 16px 44px rgba(59, 130, 246, .55); }
+
+/* Fond d'ambiance : affiche de la vignette sélectionnée, floutée et assombrie, en fondu enchaîné (ambient.js).
+   Agrandie au-delà de l'écran pour masquer les bords du flou ; les halos du fond restent visibles tant qu'aucune affiche n'est choisie. */
+#ambient { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+#ambient .amb { position: absolute; inset: -90px; background-size: cover; background-position: center 25%; filter: blur(48px) saturate(150%) brightness(.6); opacity: 0; transition: opacity .8s ease; will-change: opacity; }
+#ambient .amb.on { opacity: 1; }
+#ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 19, .25) 0%, rgba(6, 9, 19, .55) 60%, rgba(6, 9, 19, .75) 100%); }
+html.playing #ambient { display: none; }
