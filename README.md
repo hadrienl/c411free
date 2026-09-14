@@ -97,4 +97,10 @@ Variables utiles : `TV_IP` (sinon lue dans `secrets/local.env`), `LOG_HOST` (IP 
 - **Génériques** : AVPlay ne donne accès ni à l'image, ni au son, ni aux chapitres.
   - Les chapitres MKV sont lus directement dans le fichier : environ 1 épisode sur 6 en contient (mesuré sur les disques).
   - Sinon, l'app retient le générique d'une série quand on saute vers l'avant au début d'un épisode : sauts enchaînés dans les 6 premières minutes, totalisant 20 s à 3 min.
-- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`.
+- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`, `c411free.series`, `c411free.genres`.
+
+## Licence
+
+[MIT](LICENSE) © 2026 Hadrien Lanneau.
+
+Projet personnel sans lien avec c411, Free, Samsung, AlloCiné ou YouTube. Il nécessite vos propres identifiants c411 et une Freebox ; à utiliser dans le respect de leurs conditions d'utilisation.
