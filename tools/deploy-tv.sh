@@ -44,7 +44,10 @@ mv "$(ls "$BUILD"/*.wgt | head -1)" "$WGT"
 
 echo "📲 Installation…"
 sdb -s "$SERIAL" push "$WGT" "$REMOTE" >/dev/null
-sdb -s "$SERIAL" shell 0 vd_appinstall "$PKG_ID" "$REMOTE" | tail -1
+# Verdict de la TV affiché : une installation refusée (ex. « Author certificate not match ») ne doit pas passer inaperçue
+INSTALL="$(sdb -s "$SERIAL" shell 0 vd_appinstall "$PKG_ID" "$REMOTE" 2>&1)"
+echo "$INSTALL" | grep -E "install (completed|failed)|reason" | tail -2
+if ! echo "$INSTALL" | grep -q "install completed"; then echo "❌ Installation refusée par la TV"; exit 1; fi
 
 echo "▶️  Lancement…"
 sdb -s "$SERIAL" shell 0 was_execute "$APP_ID" | tail -1

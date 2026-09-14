@@ -37,9 +37,33 @@ function heroMeta(item) {
   return [item.year, item.rating ? '★ ' + item.rating.toFixed(1) : '', item.isSeries ? 'Série' : '', item.genres.join(', ')].filter(Boolean).join(' · ');
 }
 
+// c411 renvoie parfois une sélection vide (constaté sur la TV, passager) : nouvel essai discret, quelques fois au plus
+var HERO_RETRY_MS = 60000;
+var HERO_RETRIES = 3;
+var heroRetries = 0;
+
+function retryHeroLater(reason) {
+  if (heroRetries >= HERO_RETRIES) return;
+  heroRetries++;
+  debug('info', 'bandeau : nouvel essai prévu', { raison: reason, essai: heroRetries });
+  setTimeout(function () { loadHero().catch(function (e) { retryHeroLater(e.message); }); }, HERO_RETRY_MS);
+}
+
 async function loadHero() {
-  var home = await c411('/api/homepage');
-  var list = (((home && (home.data || home)) || {}).exclusivePopular || []).slice(0, HERO_MAX);
+  var home;
+  try {
+    home = await c411('/api/homepage');
+  } catch (e) {
+    retryHeroLater(e.message);
+    throw e;
+  }
+  var root = (home && (home.data || home)) || {};
+  var list = (root.exclusivePopular || []).slice(0, HERO_MAX);
+  if (!list.length) {
+    debug('info', 'bandeau : sélection vide', { cles: Object.keys(root) });
+    retryHeroLater('sélection vide');
+    return;
+  }
   var items = await Promise.all(list.map(function (x) {
     // La fiche passe par le filtre familial de c411() : un contenu écarté lève une erreur et sort du bandeau
     return c411('/api/torrents/' + x.infoHash)

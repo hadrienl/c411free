@@ -100,12 +100,17 @@ document.addEventListener('keydown', function (e) {
     else if (e.keyCode === KEY.IME_CANCEL || e.keyCode === KEY.BACK) { e.preventDefault(); closeSearch(false); }
     return;
   }
-  // Bandeau d'accueil sélectionné : ◀ ▶ changent de titre (et relancent le délai du passage automatique)
+  // Bandeau d'accueil sélectionné : ◀ ▶ changent de titre (et relancent le délai du passage automatique),
+  // ▼ va sur la première vignette de la grille (et non sur celle placée au centre de l'écran)
   if (el && el.id === 'hero' && (e.keyCode === KEY.LEFT || e.keyCode === KEY.RIGHT)) {
     e.preventDefault();
     heroStep(e.keyCode === KEY.LEFT ? -1 : 1);
     startHeroTimer();
     return;
+  }
+  if (el && el.id === 'hero' && e.keyCode === KEY.DOWN) {
+    var firstCard = $('home-grid').querySelector('[data-f]');
+    if (firstCard) { e.preventDefault(); firstCard.focus({ preventScroll: true }); reveal(firstCard); return; }
   }
   switch (e.keyCode) {
     case KEY.UP: e.preventDefault(); move('up'); break;
@@ -159,6 +164,12 @@ function reveal(el) {
   // Positions dans le contenu (indépendantes du défilement) ; animation en cours : on raisonne depuis sa cible
   var base = wrap.scrollTarget != null ? wrap.scrollTarget : wrap.scrollTop;
   var target = scrollTargetFor(elTop, elBottom, base, wrap.clientHeight, SCROLL_MARGIN_PX);
+  // Bandeau d'accueil : jamais à moitié visible (titre coupé sous l'en-tête) ; tout en haut, ou juste en dessous
+  var hero = wrap.querySelector('#hero:not(.off)');
+  if (target != null && hero && el !== hero) {
+    var heroBottom = hero.getBoundingClientRect().bottom - w.top + wrap.scrollTop;
+    if (target > 0 && target < heroBottom) target = Math.min(heroBottom, elTop - SCROLL_MARGIN_PX);
+  }
   if (target != null) animateScroll(wrap, target);
 }
 
