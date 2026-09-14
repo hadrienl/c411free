@@ -2,13 +2,15 @@
 # Génère la configuration, empaquette, installe et lance l'app C411free sur la TV.
 # Usage : tools/deploy-tv.sh [profil_certificat]          (ou npm run deploy)
 #   DEBUG_LOG=1 tools/deploy-tv.sh → journal de débogage envoyé à ce Mac (npm run deploy:debug, puis npm run logs)
-# Variables : TV_IP (TV_IP), TIZEN_HOME (~/tizen-studio-cli), LOG_HOST (IP du Mac, détectée), LOG_PORT (8765)
+# Variables : TV_IP (secrets/local.env), TIZEN_HOME (~/tizen-studio-cli), LOG_HOST (IP du Mac, détectée), LOG_PORT (8765)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="$ROOT/app"
 PROFILE="${1:-c411free}"
-TV_IP="${TV_IP:-TV_IP}"
+# Réglages propres à l'installation (IP de la TV…) : secrets/local.env, non versionné (modèle : tools/local.env.example)
+if [ -f "$ROOT/secrets/local.env" ]; then . "$ROOT/secrets/local.env"; fi
+TV_IP="${TV_IP:?Définissez TV_IP dans secrets/local.env (voir tools/local.env.example)}"
 TIZEN_HOME="${TIZEN_HOME:-$HOME/tizen-studio-cli}"
 export PATH="$TIZEN_HOME/tools:$TIZEN_HOME/tools/ide/bin:$PATH"
 

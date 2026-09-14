@@ -5,8 +5,10 @@
 set -euo pipefail
 
 EMAIL="${1:?Usage : tools/make-cert.sh <email_compte_samsung>}"
-DUID="${DUID:-TV_DUID}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# DUID de la TV : secrets/local.env, non versionné (modèle : tools/local.env.example)
+if [ -f "$ROOT/secrets/local.env" ]; then . "$ROOT/secrets/local.env"; fi
+DUID="${TV_DUID:?Définissez TV_DUID dans secrets/local.env (sdb shell 0 getduid)}"
 WORK="$ROOT/secrets/tizen-cert"
 PASSWORD="$(cat "$ROOT/secrets/tizen-cert.password")"
 LOGIN_URL="https://account.samsung.com/mobile/account/check.do?serviceID=v285zxnl3h&actionID=StartOAuth2&accessToken=Y&redirect_uri=http://localhost:4794/signin/callback"

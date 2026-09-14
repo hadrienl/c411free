@@ -7,7 +7,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // certificat auto-signé de la TV, réseau local uniquement
-const TV_IP = process.env.TV_IP || 'TV_IP';
+// IP de la TV : variable TV_IP ou secrets/local.env (non versionné, modèle : tools/local.env.example)
+const localEnv = await readFile(join(dirname(fileURLToPath(import.meta.url)), '..', 'secrets', 'local.env'), 'utf8').catch(() => '');
+const TV_IP = process.env.TV_IP || localEnv.match(/^TV_IP=(.+)$/m)?.[1]?.trim();
+if (!TV_IP) { console.log('Définissez TV_IP dans secrets/local.env (voir tools/local.env.example)'); process.exit(1); }
 const TOKEN_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'secrets', 'tv-token.json');
 const keys = process.argv.slice(2);
 if (!keys.length) { console.log('Usage : node tools/tv-remote.mjs KEY_1 KEY_2 …'); process.exit(1); }

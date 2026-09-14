@@ -44,7 +44,8 @@ secrets/              Secrets locaux, jamais versionnés
 
 - Node.js ≥ 20.
 - Tizen Studio en ligne de commande dans `~/tizen-studio-cli` (ou `TIZEN_HOME`).
-- TV en mode développeur, avec l'IP du Mac déclarée. `sdb connect TV_IP` doit fonctionner.
+- TV en mode développeur, avec l'IP du Mac déclarée. `sdb connect <IP de la TV>` doit fonctionner.
+- `secrets/local.env` (copie de `tools/local.env.example`) : IP de la TV (`TV_IP`) et son DUID (`TV_DUID`, pour les certificats).
 - Dans `secrets/` :
   - `c411.env` : `C411_API_KEY=…` ;
   - `freebox.json` : jeton de l'app, obtenu avec `node tools/freebox.mjs auth` puis validé sur l'écran de la Freebox ;
@@ -74,7 +75,7 @@ npm run deploy:debug   # terminal 2 : déploie avec le journal envoyé à ce Mac
 
 Sans `DEBUG_LOG=1`, l'app n'envoie aucun journal. La clé c411 est masquée dans les messages.
 
-Variables utiles : `TV_IP` (TV_IP par défaut), `LOG_HOST` (IP du Mac, détectée sur en0/en1), `LOG_PORT` (8765).
+Variables utiles : `TV_IP` (sinon lue dans `secrets/local.env`), `LOG_HOST` (IP du Mac, détectée sur en0/en1), `LOG_PORT` (8765).
 
 ### Autres outils
 
