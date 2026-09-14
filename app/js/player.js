@@ -530,14 +530,15 @@ async function play(file, returnTo, task) {
     : Promise.resolve({ audio: [], text: [] });
 
   try {
-    var url = await upnpUrl(file.filepath);
+    // Fichier de la Freebox (UPnP), ou adresse directe (bande-annonce AlloCiné)
+    var url = file.url || await upnpUrl(file.filepath);
     // Chapitres du fichier (générique de début et de fin), lus en parallèle du démarrage
     var chaptersPromise = /\.mkv$/i.test(file.name)
       ? withTimeout(readMkvChapters(url, fetchRange), 5000).catch(function (e) { debug('info', 'chapitres illisibles', { erreur: e.message }); return []; })
       : Promise.resolve([]);
 
     document.documentElement.classList.add('playing');
-    $('osd-title').textContent = label(file.name);
+    $('osd-title').textContent = file.url ? file.name : label(file.name);
     $('osd-tracks').textContent = '';
     $('osd-time').textContent = '0:00 / 0:00';
     $('osd-bar').style.width = '0';
@@ -676,6 +677,8 @@ function stopPlayback() {
     // Retour sur la liste à jour, positionnée sur le prochain fichier non vu
     renderFiles();
     showFiles();
+  } else if (player.returnTo === 'detail') {
+    show('detail', $('d-trailer')); // bande-annonce : retour à la fiche
   } else {
     openDownloads();
   }

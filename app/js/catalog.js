@@ -277,7 +277,6 @@ async function openDetail(hash, from) {
   $('d-audio').textContent = '';
   state.detail = { infoHash: hash, name: item.name, size: item.size };
   $('d-trailer').classList.add('off');
-  state.detail.trailerId = null;
   show('detail', $('d-download'));
 
   try {
@@ -287,10 +286,14 @@ async function openDetail(hash, from) {
     var tmdb = meta.tmdbData || {};
     state.detail = { infoHash: hash, name: d.name, size: d.size };
 
-    // Bande-annonce cherchée sur YouTube en arrière-plan : le bouton apparaît quand une vidéo est trouvée
-    findTrailer(tmdb.title || n.title, tmdb.year || n.year).then(function (videoId) {
-      if (!videoId || !state.detail || state.detail.infoHash !== hash) return;
-      state.detail.trailerId = videoId;
+    // Bande-annonce cherchée en arrière-plan (AlloCiné, sinon YouTube) : le bouton apparaît quand une vidéo est trouvée
+    var trailerTitle = tmdb.title || n.title;
+    var isSeries = /tv|serie/i.test(tmdb.type || '') || !!n.episode;
+    findTrailerSource([trailerTitle, tmdb.originalTitle].filter(Boolean), tmdb.year || n.year, isSeries).then(function (source) {
+      if (!source || !state.detail || state.detail.infoHash !== hash) return;
+      state.detail.trailer = source;
+      state.detail.trailerTitle = trailerTitle;
+      $('d-trailer').textContent = source.kind === 'youtube' ? '▶ Bande-annonce (YouTube)' : '▶ Bande-annonce';
       $('d-trailer').classList.remove('off');
     }).catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); });
 

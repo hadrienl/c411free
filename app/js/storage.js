@@ -73,7 +73,11 @@ var POSITIONS_MAX = 200;
 function positionKey(task, file) { return (task ? taskKey(task) : 'fichier') + '|' + file.name; }
 function loadPositions() { try { return JSON.parse(localStorage.getItem(POSITIONS_KEY)) || {}; } catch (e) { return {}; } }
 function storePositions(all) { try { localStorage.setItem(POSITIONS_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
-function savedPosition(task, file) { var p = loadPositions()[positionKey(task, file)]; return p && p.pos > 0 ? p.pos : 0; }
+function savedPosition(task, file) {
+  if (file.url) return 0; // bande-annonce : toujours depuis le début
+  var p = loadPositions()[positionKey(task, file)];
+  return p && p.pos > 0 ? p.pos : 0;
+}
 
 // Avancement d'un fichier commencé mais pas terminé (position de reprise mémorisée) : entre 0 et 1, 0 sinon
 function startedRatio(task, file) {
@@ -87,7 +91,7 @@ function clearPosition(task, file) {
 }
 
 function persistPosition(cur, dur) {
-  if (!player.file || !dur) return;
+  if (!player.file || !dur || player.file.url) return; // pas de reprise pour une bande-annonce
   var all = loadPositions(), key = positionKey(player.task, player.file);
   if (cur / dur >= RESUME_DONE_RATIO || cur < RESUME_MIN_MS) {
     delete all[key];

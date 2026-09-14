@@ -36,7 +36,12 @@ $('home-grid').addEventListener('click', onGridClick('home'));
 $('results-grid').addEventListener('click', onGridClick('results'));
 $('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
 $('d-download').addEventListener('click', startDownload);
-$('d-trailer').addEventListener('click', function () { if (state.detail && state.detail.trailerId) openTrailerInYouTube(state.detail.trailerId); });
+$('d-trailer').addEventListener('click', function () {
+  var source = state.detail && state.detail.trailer;
+  if (!source) return;
+  if (source.kind === 'allocine') play({ name: 'Bande-annonce · ' + state.detail.trailerTitle, url: source.url }, 'detail', null);
+  else openTrailerInYouTube(source.videoId);
+});
 $('d-back').addEventListener('click', function () { show(state.detailFrom); });
 
 try {
@@ -51,4 +56,4 @@ loadHome(true).then(function () {
 });
 debug('info', 'app démarrée (v' + VERSION + ')');
 // Version avec journal : vérifie au démarrage que la recherche de bande-annonce aboutit sur la TV (résultat journalisé)
-if (LOG_URL) setTimeout(function () { findTrailer('Inception', '2010').catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); }); }, 3000);
+if (LOG_URL) setTimeout(function () { findTrailerSource(['Inception'], '2010', false).catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); }); }, 3000);
