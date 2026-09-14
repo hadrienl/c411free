@@ -570,7 +570,44 @@ function updateOsd() {
     $('osd-bar').style.width = (dur ? cur / dur * 100 : 0).toFixed(2) + '%';
     renderSeekCursor(cur, dur);
     if (dur && cur / dur >= WATCHED_RATIO && player.task && player.file) markWatched(player.task, player.file.name);
+    // Sauvegarde régulière de la position (TV éteinte, app fermée brutalement…)
+    if (player.resumeReady && Date.now() - (player.positionSavedAt || 0) > 10000) {
+      persistPosition(cur, dur);
+      player.positionSavedAt = Date.now();
+    }
   } catch (e) { /* lecteur pas prêt */ }
+}
+
+// ---------- Reprise de lecture (positions mémorisées sur la TV) ----------
+// { "<info_hash>|<nom du fichier>": { pos: ms, dur: ms, at: horodatage } }
+var POSITIONS_KEY = 'c411free.positions';
+var RESUME_MIN_MS = 10000;     // en dessous : rien à reprendre
+var RESUME_DONE_RATIO = 0.95;  // au-delà : fichier considéré comme terminé
+var POSITIONS_MAX = 200;
+
+function positionKey(task, file) { return (task ? taskKey(task) : 'fichier') + '|' + file.name; }
+function loadPositions() { try { return JSON.parse(localStorage.getItem(POSITIONS_KEY)) || {}; } catch (e) { return {}; } }
+function storePositions(all) { try { localStorage.setItem(POSITIONS_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
+function savedPosition(task, file) { var p = loadPositions()[positionKey(task, file)]; return p && p.pos > 0 ? p.pos : 0; }
+
+function clearPosition(task, file) {
+  var all = loadPositions(), key = positionKey(task, file);
+  if (all[key]) { delete all[key]; storePositions(all); }
+}
+
+function persistPosition(cur, dur) {
+  if (!player.file || !dur) return;
+  var all = loadPositions(), key = positionKey(player.task, player.file);
+  if (cur / dur >= RESUME_DONE_RATIO || cur < RESUME_MIN_MS) {
+    delete all[key];
+  } else {
+    all[key] = { pos: Math.floor(cur), dur: Math.floor(dur), at: Date.now() };
+    var keys = Object.keys(all);
+    if (keys.length > POSITIONS_MAX) {
+      keys.sort(function (a, b) { return all[a].at - all[b].at; }).slice(0, keys.length - POSITIONS_MAX).forEach(function (k) { delete all[k]; });
+    }
+  }
+  storePositions(all);
 }
 
 // Curseur de la barre de lecture : position réelle, ou position visée pendant un déplacement
@@ -923,7 +960,14 @@ async function play(file, returnTo, task) {
       onbufferingprogress: function (p) { osdState('Chargement… ' + p + ' %'); },
       onbufferingcomplete: function () { osdState(''); },
       oncurrentplaytime: function () {},
-      onstreamcompleted: function () { trace('fin'); player.scrub = null; if (player.task) markWatched(player.task, file.name); stopPlayback(); },
+      onstreamcompleted: function () {
+        trace('fin');
+        player.scrub = null;
+        player.resumeReady = false; // fichier terminé : pas de position à reprendre
+        clearPosition(player.task, file);
+        if (player.task) markWatched(player.task, file.name);
+        stopPlayback();
+      },
       onevent: function (type, data) { trace('event ' + type, { data: data }); },
       onerror: function (err) { trace('erreur ' + err); toast('Lecture impossible : ' + err, true); stopPlayback(); },
       onsubtitlechange: function (duration, text) {
@@ -952,6 +996,19 @@ async function play(file, returnTo, task) {
       osdState('');
       clearInterval(player.tick);
       player.tick = setInterval(updateOsd, 1000);
+      // Reprise à la position mémorisée lors de la dernière fermeture de ce fichier
+      var resumeAt = savedPosition(task, file);
+      if (resumeAt) {
+        trace('reprise', { position: resumeAt });
+        osdState('⏯ Reprise à ' + fmtTime(resumeAt), 2500);
+        try {
+          av.seekTo(resumeAt, function () { player.resumeReady = true; updateOsd(); }, function () { player.resumeReady = true; });
+        } catch (e) {
+          player.resumeReady = true;
+        }
+      } else {
+        player.resumeReady = true;
+      }
       try {
         var tracks = av.getTotalTrackInfo() || [];
         player.audio = tracks.filter(function (t) { return t.type === 'AUDIO'; });
@@ -982,6 +1039,12 @@ async function play(file, returnTo, task) {
 }
 
 function stopPlayback() {
+  // Mémoriser la position avant d'arrêter (effacée si > 95 % ou < 10 s)
+  try {
+    var st = avState();
+    if (player.resumeReady && (st === 'PLAYING' || st === 'PAUSED')) persistPosition(webapis.avplay.getCurrentTime(), webapis.avplay.getDuration());
+  } catch (e) { /* lecteur indisponible */ }
+  player.resumeReady = false;
   try { webapis.avplay.stop(); } catch (e) { /* déjà arrêté */ }
   try { webapis.avplay.close(); } catch (e) { /* déjà fermé */ }
   clearInterval(player.tick);
