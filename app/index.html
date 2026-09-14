@@ -62,11 +62,12 @@
       <span class="btn tab" data-f tabindex="-1" data-sort="az">A → Z</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="za">Z → A</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="size">Taille</span>
+      <span class="btn" data-f tabindex="-1" id="dl-view">☰ Liste</span>
       <span class="btn" data-f tabindex="-1" id="dl-rescan">🔄 Actualiser</span>
     </nav>
   </header>
-  <div class="list-wrap"><div id="downloads-list"></div></div>
-  <p class="hint">OK pour regarder · OK maintenu : options ⋯ (supprimer) · 📁 = dossier d'épisodes · RETOUR accueil</p>
+  <div class="list-wrap"><div id="downloads-list" class="grid"></div></div>
+  <p class="hint">OK pour regarder · OK maintenu : options (supprimer) · 📁 = dossier d'épisodes · RETOUR accueil</p>
 </section>
 
 <section id="files" class="screen">
@@ -116,6 +117,7 @@
 <script src="js/names.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/c411.js"></script>
+<script src="js/posters.js"></script>
 <script src="js/freebox.js"></script>
 <script src="js/media.js"></script>
 <script src="js/tracks.js"></script>

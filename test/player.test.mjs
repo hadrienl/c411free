@@ -44,6 +44,14 @@ test('formatage des noms, tailles et durées', () => {
   assert.equal(app.isPlayable({ rx_pct: 9000, status: 'downloading' }), false);
 });
 
+test('vue des Médias : vignettes par défaut, dernier choix mémorisé', () => {
+  assert.equal(app.loadMediaView(), 'grid');
+  app.saveMediaView('list');
+  assert.equal(app.loadMediaView(), 'list');
+  app.saveMediaView('grid');
+  assert.equal(app.loadMediaView(), 'grid');
+});
+
 test('fichiers vus et positions de reprise mémorisés', () => {
   const task = { info_hash: 'ABC' };
   app.setVideoCount(task, 10);

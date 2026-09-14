@@ -36,6 +36,15 @@ html.playing, html.playing body { background: transparent; }
 .poster .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 64px; opacity: .35; }
 .poster .q { position: absolute; top: 10px; left: 10px; font-size: 20px; padding: 3px 10px; border-radius: 8px; background: rgba(10, 15, 28, .85); }
 .poster .warn { left: auto; right: 10px; color: var(--warn); }
+/* Vignettes des Médias : badge « vu », téléchargement en cours (affiche assombrie, pourcentage et barre) */
+.poster .q.right { left: auto; right: 10px; }
+.poster .q.watched { color: var(--ok); }
+.poster.incomplete img { filter: grayscale(.5) brightness(.55); }
+.poster .dl-pct { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 34px; font-weight: 700; text-shadow: 0 0 8px #000, 0 0 16px #000; }
+.poster .dl-bar { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 12px; border-radius: 6px; background: rgba(10, 15, 28, .85); overflow: hidden; }
+.poster .dl-bar > div { height: 100%; background: var(--ok); }
+.poster .dl-bar.active > div { background: var(--accent); }
+.grid .empty { grid-column: 1 / -1; }
 .cap { font-size: 24px; margin-top: 10px; line-height: 1.25; height: 60px; overflow: hidden; }
 .sub { font-size: 20px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .more .poster { display: flex; align-items: center; justify-content: center; font-size: 40px; }

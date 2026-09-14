@@ -3,6 +3,11 @@
 var PREFS_KEY = 'c411free.trackPrefs';
 var WATCHED_KEY = 'c411free.watched';
 var WATCHED_RATIO = 0.25; // un fichier est « vu » au-delà de 25 % de sa durée
+var MEDIA_VIEW_KEY = 'c411free.mediaView';
+
+// ---------- Vue des Médias : vignettes (par défaut) ou liste ----------
+function loadMediaView() { try { return localStorage.getItem(MEDIA_VIEW_KEY) === 'list' ? 'list' : 'grid'; } catch (e) { return 'grid'; } }
+function saveMediaView(view) { try { localStorage.setItem(MEDIA_VIEW_KEY, view); } catch (e) { /* stockage indisponible */ } }
 
 // ---------- Fichiers vus (mémorisés sur la TV) ----------
 // { "<info_hash ou id de tâche>": { total: <nombre de vidéos>, files: { "<nom du fichier>": <horodatage> } } }

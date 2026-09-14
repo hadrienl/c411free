@@ -13,37 +13,109 @@ var SORTS = {
   size: function (a, b) { return b.size - a.size; }
 };
 
-// Médias : vidéos des disques (films et dossiers d'épisodes), avec la progression des téléchargements associés
+// Vignette d'un média : affiche, nombre de vidéos, badge « vu », progression d'un téléchargement en cours
+function mediaCardHtml(m, posterCache, nowMs) {
+  var t = m.task;
+  var inProgress = !!t && !isPlayable(t);
+  var active = !!t && t.status === 'downloading';
+  var pct = t ? (t.rx_pct || 0) / 100 : 0;
+  var seen = watchedBadge(mediaOwner(m));
+  var q = posterQuery(m);
+  var url = q ? cachedPoster(posterCache, q, nowMs) : '';
+  var sub = inProgress
+    ? [(ICON[t.status] || '⬇️') + ' ' + (STATUS[t.status] || t.status), active && t.eta ? 'reste ' + fmtEta(t.eta) : '']
+    : [gb(m.size), fmtDate(mediaDate(m))];
+  return '<div class="poster' + (inProgress ? ' incomplete' : '') + '"' + (q ? ' data-poster-key="' + esc(q.key) + '"' : '') + '>'
+    + '<div class="ph">' + (m.kind === 'folder' ? '📁' : '🎬') + '</div>'
+    + (url ? '<img src="' + esc(poster(url, 'w342')) + '" onerror="this.remove()">' : '')
+    + (m.kind === 'folder' ? '<span class="q">📁 ' + m.files.length + '</span>' : '')
+    + (seen ? '<span class="q right watched">' + seen + '</span>' : '')
+    + (inProgress ? '<span class="dl-pct">' + pct.toFixed(0) + ' %</span><div class="dl-bar' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div>' : '')
+    + '</div>'
+    + '<div class="cap">' + esc(label(m.name)) + '</div>'
+    + '<div class="sub">' + esc(sub.filter(Boolean).join(' · ')) + '</div>';
+}
+
+// Ligne d'un média (vue liste)
+function mediaRowHtml(m, index) {
+  var t = m.task;
+  var inProgress = !!t && !isPlayable(t);
+  var active = !!t && t.status === 'downloading';
+  var pct = t ? (t.rx_pct || 0) / 100 : 0;
+  var seen = watchedBadge(mediaOwner(m));
+  var icon = inProgress ? (ICON[t.status] || '⬇️') : m.kind === 'folder' ? '📁' : '🎬';
+  var meta = [];
+  if (m.kind === 'folder') meta.push(m.files.length + ' vidéos');
+  if (inProgress) meta.push((STATUS[t.status] || t.status) + (active ? ' · ' + (t.rx_rate / 1e6).toFixed(1) + ' Mo/s · reste ' + fmtEta(t.eta) : ''));
+  meta.push('ajouté ' + fmtDate(mediaDate(m)));
+  if (!inProgress) meta.push('▶ OK pour regarder');
+  return '<span class="icon">' + icon + '</span>'
+    + '<div class="main"><div class="title">' + esc(label(m.name)) + (seen ? ' <span class="seen">' + seen + '</span>' : '') + '</div>'
+    + '<div class="meta">' + esc(meta.join(' · ')) + '</div></div>'
+    + '<span class="size">' + gb(m.size) + '</span>'
+    + (t
+      ? '<div class="progress' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div><span class="pct">' + pct.toFixed(0) + ' %</span>'
+      : '<div class="progress" style="visibility:hidden"></div><span class="pct"></span>')
+    + '<span class="more-btn" data-more-id="' + index + '">⋯</span>';
+}
+
+// Vue des Médias : « grid » (vignettes, par défaut) ou « list », mémorisée sur la TV
+state.mediaView = loadMediaView();
+
+function renderViewButton() {
+  $('dl-view').textContent = state.mediaView === 'grid' ? '☰ Liste' : '▦ Icônes';
+}
+
+function toggleMediaView() {
+  state.mediaView = state.mediaView === 'grid' ? 'list' : 'grid';
+  saveMediaView(state.mediaView);
+  renderViewButton();
+  renderDownloads();
+  $('downloads-list').parentNode.scrollTop = 0;
+  if (state.mediaView === 'grid') loadMediaPosters();
+}
+
+// Médias : vidéos des disques (films et dossiers d'épisodes) en vignettes ou en liste, avec la progression des téléchargements.
+// Rafraîchi toutes les 3 s : seuls les éléments modifiés sont réécrits (pas de clignotement des affiches ni perte du focus).
 function renderDownloads() {
   var focusedId = document.activeElement && document.activeElement.getAttribute('data-id');
   var media = state.media;
   var list = media.entries.map(function (m, i) { return { m: m, i: i }; })
     .sort(function (a, b) { return SORTS[state.dlSort](a.m, b.m); });
   $('dl-count').textContent = media.entries.length + ' média(s)' + (media.scanning ? ' · analyse des disques… ' + media.progress : '');
-  $('downloads-list').innerHTML = list.map(function (x) {
-    var m = x.m, t = m.task;
-    var inProgress = !!t && !isPlayable(t);
-    var active = !!t && t.status === 'downloading';
-    var pct = t ? (t.rx_pct || 0) / 100 : 0;
-    var seen = watchedBadge(mediaOwner(m));
-    var icon = inProgress ? (ICON[t.status] || '⬇️') : m.kind === 'folder' ? '📁' : '🎬';
-    var meta = [];
-    if (m.kind === 'folder') meta.push(m.files.length + ' vidéos');
-    if (inProgress) meta.push((STATUS[t.status] || t.status) + (active ? ' · ' + (t.rx_rate / 1e6).toFixed(1) + ' Mo/s · reste ' + fmtEta(t.eta) : ''));
-    meta.push('ajouté ' + fmtDate(mediaDate(m)));
-    if (!inProgress) meta.push('▶ OK pour regarder');
-    return '<div class="item" data-f tabindex="-1" id="dl-' + x.i + '" data-id="' + x.i + '">'
-      + '<span class="icon">' + icon + '</span>'
-      + '<div class="main"><div class="title">' + esc(label(m.name)) + (seen ? ' <span class="seen">' + seen + '</span>' : '') + '</div>'
-      + '<div class="meta">' + esc(meta.join(' · ')) + '</div></div>'
-      + '<span class="size">' + gb(m.size) + '</span>'
-      + (t
-        ? '<div class="progress' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div><span class="pct">' + pct.toFixed(0) + ' %</span>'
-        : '<div class="progress" style="visibility:hidden"></div><span class="pct"></span>')
-      + '<span class="more-btn" data-more-id="' + x.i + '">⋯</span>'
-      + '</div>';
-  }).join('') || '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : 'Aucune vidéo trouvée.') + '</div>';
-  if (focusedId && $('dl-' + focusedId)) $('dl-' + focusedId).focus();
+  var grid = $('downloads-list'), asGrid = state.mediaView === 'grid';
+  renderViewButton();
+  grid.className = asGrid ? 'grid' : '';
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : 'Aucune vidéo trouvée.') + '</div>';
+    grid.renderedIds = '';
+    return;
+  }
+  var ids = state.mediaView + ':' + list.map(function (x) { return x.i; }).join(',');
+  if (grid.renderedIds !== ids) {
+    grid.innerHTML = list.map(function (x) { return '<div class="' + (asGrid ? 'card' : 'item') + '" data-f tabindex="-1" id="dl-' + x.i + '" data-id="' + x.i + '"></div>'; }).join('');
+    grid.renderedIds = ids;
+  }
+  var posterCache = asGrid ? loadPosterCache() : null, now = Date.now();
+  list.forEach(function (x) {
+    var el = $('dl-' + x.i), html = asGrid ? mediaCardHtml(x.m, posterCache, now) : mediaRowHtml(x.m, x.i);
+    if (el.renderedHtml !== html) { el.innerHTML = html; el.renderedHtml = html; }
+  });
+  var focused = focusedId && $('dl-' + focusedId);
+  if (focused && document.activeElement !== focused) focused.focus();
+}
+
+// Affiche trouvée pendant que l'écran est ouvert : ajoutée aux vignettes concernées
+function showPoster(key, url) {
+  Array.prototype.forEach.call(document.querySelectorAll('#downloads-list [data-poster-key]'), function (el) {
+    if (el.getAttribute('data-poster-key') !== key || el.querySelector('img')) return;
+    el.querySelector('.ph').insertAdjacentHTML('afterend', '<img src="' + esc(poster(url, 'w342')) + '" onerror="this.remove()">');
+  });
+}
+
+function loadMediaPosters() {
+  if (state.mediaView !== 'grid') return;
+  fetchPosters(state.media.entries, function () { return state.screen === 'downloads'; }, showPoster);
 }
 
 // Index des vidéos : cache immédiat, réanalyse des disques en arrière-plan (au plus toutes les 10 min,
@@ -86,7 +158,7 @@ async function scanMedia(force) {
     toast('Analyse des disques impossible : ' + e.message, true);
   } finally {
     media.scanning = false;
-    if (state.screen === 'downloads') renderDownloads();
+    if (state.screen === 'downloads') { renderDownloads(); loadMediaPosters(); }
   }
 }
 
@@ -108,6 +180,7 @@ async function refreshDownloads() {
 }
 
 $('dl-rescan').addEventListener('click', function () { scanMedia(true); });
+$('dl-view').addEventListener('click', toggleMediaView);
 
 async function openDownloads() {
   show('downloads');
@@ -116,6 +189,7 @@ async function openDownloads() {
   renderDownloads(); // affichage immédiat depuis le cache
   scanMedia(false);  // réanalyse en arrière-plan si l'index a plus de 10 min
   await refreshDownloads();
+  loadMediaPosters(); // affiches manquantes, recherchées en arrière-plan
   if (!document.activeElement || !document.activeElement.hasAttribute('data-id')) {
     var target = (state.lastFocus.downloads && $(state.lastFocus.downloads)) || $('downloads-list').querySelector('[data-id]');
     if (target) { target.focus(); target.scrollIntoView({ block: 'nearest' }); }
