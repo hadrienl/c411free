@@ -1,110 +1,70 @@
-// Bande-annonce de la fiche : première vidéo d'une recherche YouTube (sans clé API), lue en plein écran dans l'app
-// avec le lecteur intégré YouTube (IFrame Player API). Les erreurs du lecteur sont journalisées (101/150/152/153 : lecture
-// intégrée refusée).
+// Bande-annonce de la fiche : première vidéo d'une recherche YouTube, ouverte dans l'app YouTube de la TV.
+// La lecture intégrée dans C411free est impossible : chargée depuis file://, l'app n'envoie pas de référent et le lecteur
+// YouTube refuse avec l'erreur 153 (vérifié sur la TV et reproduit dans Chromium ; la même page servie en HTTP fonctionne).
 
-var TRAILER_API_TIMEOUT_MS = 10000;
-var TRAILER_MUTED_FALLBACK_MS = 2500; // son bloqué par la règle d'autolecture : relance en muet
-var trailerState = { player: null, apiPromise: null, cache: {} };
+// App YouTube : identifiants relevés sur la TV (sdb applist), puis l'ancien identifiant générique des TV Samsung
+var YT_TV_APP_IDS = ['9Ur5IzDKqV.TizenYouTube', 'com.samsung.tv.cobalt-yt', '111299001912'];
+var trailerState = { cache: {} };
 
 // Requête de recherche : « Inception 2010 bande annonce VF »
 function trailerQuery(title, year) {
   return [String(title || '').trim(), year || '', 'bande annonce VF'].filter(Boolean).join(' ');
 }
 
-// Première vidéo des résultats (hors publicités et Shorts, qui n'utilisent pas videoRenderer)
+// Première vidéo des résultats (hors publicités et Shorts, qui n'utilisent pas videoRenderer) ;
+// à défaut, première vidéo citée (autres mises en page de YouTube)
 function firstVideoId(html) {
-  var m = String(html || '').match(/"videoRenderer":\{"videoId":"([A-Za-z0-9_-]{11})"/);
+  var text = String(html || '');
+  var m = text.match(/"videoRenderer":\{"videoId":"([A-Za-z0-9_-]{11})"/)
+    || text.match(/"compactVideoRenderer":\{"videoId":"([A-Za-z0-9_-]{11})"/)
+    || text.match(/\/watch\?v=([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
+
+// Recherche par l'API interne de YouTube (JSON) : la page de résultats redirige (303, recherche perdue) les requêtes
+// faites depuis une app, reconnues à leurs en-têtes Sec-Fetch « cross-site ».
+var YT_SEARCH_URL = 'https://www.youtube.com/youtubei/v1/search?prettyPrint=false';
+var YT_CLIENT = { clientName: 'WEB', clientVersion: '2.20250101.00.00', hl: 'fr', gl: 'FR' };
 
 async function findTrailer(title, year) {
   var query = trailerQuery(title, year);
   if (!title) return null;
   if (trailerState.cache[query] !== undefined) return trailerState.cache[query];
-  var res = await fetch('https://www.youtube.com/results?search_query=' + encodeURIComponent(query), { headers: { 'Accept-Language': 'fr-FR' } });
+  var res = await fetch(YT_SEARCH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ context: { client: YT_CLIENT }, query: query })
+  });
   var id = res.ok ? firstVideoId(await res.text()) : null;
   trailerState.cache[query] = id;
   debug('info', 'bande-annonce trouvée', { query: query, videoId: id, http: res.status });
   return id;
 }
 
-function trailerOpen() { return $('trailer').classList.contains('open'); }
-
-function setTrailerStatus(text) {
-  var el = $('trailer-status');
-  el.textContent = text || '';
-  el.style.display = text ? 'block' : 'none';
-}
-
-function loadYouTubeApi() {
-  if (window.YT && window.YT.Player) return Promise.resolve();
-  if (trailerState.apiPromise) return trailerState.apiPromise;
-  trailerState.apiPromise = new Promise(function (resolve, reject) {
-    var timer = setTimeout(function () { trailerState.apiPromise = null; reject(new Error('API YouTube : délai dépassé')); }, TRAILER_API_TIMEOUT_MS);
-    window.onYouTubeIframeAPIReady = function () { clearTimeout(timer); resolve(); };
-    var script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    script.onerror = function () { clearTimeout(timer); trailerState.apiPromise = null; reject(new Error('API YouTube injoignable')); };
-    document.head.appendChild(script);
-  });
-  return trailerState.apiPromise;
-}
-
-async function openTrailer(videoId) {
-  $('trailer').classList.add('open');
-  $('trailer-close').focus(); // la sélection reste dans l'app : RETOUR doit fermer la vidéo
-  setTrailerStatus('Chargement de la bande-annonce…');
-  try {
-    await loadYouTubeApi();
-  } catch (e) {
-    debug('error', 'bande-annonce : ' + e.message);
-    setTrailerStatus('Bande-annonce indisponible (' + e.message + ')');
-    return;
-  }
-  if (!trailerOpen()) return;
-  $('trailer-player').innerHTML = '<div id="trailer-frame"></div>';
-  var player = new window.YT.Player('trailer-frame', {
-    width: 1920, height: 1080, videoId: videoId,
-    playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1, hl: 'fr', cc_load_policy: 0 },
-    events: {
-      onReady: function (ev) {
-        debug('info', 'bande-annonce prête', { videoId: videoId });
-        ev.target.playVideo();
-        setTimeout(function () {
-          if (trailerState.player !== ev.target || ev.target.getPlayerState() === 1) return;
-          debug('info', 'bande-annonce : relance en muet', { etat: ev.target.getPlayerState() });
-          ev.target.mute();
-          ev.target.playVideo();
-        }, TRAILER_MUTED_FALLBACK_MS);
-      },
-      onStateChange: function (ev) {
-        debug('info', 'bande-annonce état', { etat: ev.data }); // -1 non démarrée, 0 fin, 1 lecture, 2 pause, 3 chargement
-        if (ev.data === 1) setTrailerStatus('');
-        if (ev.data === 0) closeTrailer();
-      },
-      onError: function (ev) {
-        debug('error', 'bande-annonce erreur ' + ev.data, { videoId: videoId });
-        setTrailerStatus('YouTube refuse la lecture dans l\'app (erreur ' + ev.data + ')');
-      }
+// Ouvre la vidéo dans l'app YouTube. Pour chaque identifiant d'app, deux façons de lui transmettre la vidéo, essayées
+// dans l'ordre tant que le lancement échoue : données PAYLOAD (lien profond de l'app YouTube TV), puis adresse de la vidéo.
+function openTrailerInYouTube(videoId) {
+  var controls = [
+    function () {
+      return new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', null, null, null,
+        [new tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: 'v=' + videoId })])]);
+    },
+    function () { return new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', 'https://www.youtube.com/watch?v=' + videoId); }
+  ];
+  var tries = [];
+  YT_TV_APP_IDS.forEach(function (appId) { controls.forEach(function (control, method) { tries.push({ appId: appId, control: control, method: method }); }); });
+  var attempt = function (i) {
+    if (i >= tries.length) { toast('Impossible d\'ouvrir YouTube', true); return; }
+    var t = tries[i];
+    try {
+      tizen.application.launchAppControl(t.control(), t.appId,
+        function () { debug('info', 'bande-annonce ouverte dans YouTube', { videoId: videoId, app: t.appId, methode: t.method }); },
+        function (e) { debug('error', 'lancement YouTube refusé', { app: t.appId, methode: t.method, erreur: e && (e.name + ' ' + e.message) }); attempt(i + 1); });
+    } catch (e) {
+      debug('error', 'lancement YouTube impossible', { app: t.appId, methode: t.method, erreur: e.name + ' ' + e.message });
+      attempt(i + 1);
     }
-  });
-  trailerState.player = player;
-  $('trailer-close').focus();
-}
-
-function toggleTrailerPause() {
-  var p = trailerState.player;
-  if (!p || !p.getPlayerState) return;
-  if (p.getPlayerState() === 1) p.pauseVideo(); else p.playVideo();
-}
-
-function closeTrailer() {
-  if (trailerState.player) {
-    try { trailerState.player.destroy(); } catch (e) { /* déjà détruit */ }
-    trailerState.player = null;
-  }
-  $('trailer-player').innerHTML = '';
-  $('trailer').classList.remove('open');
-  setTrailerStatus('');
-  if (state.screen === 'detail') $('d-trailer').focus();
+  };
+  toast('Ouverture de la bande-annonce dans YouTube…');
+  attempt(0);
 }

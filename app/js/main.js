@@ -36,9 +36,7 @@ $('home-grid').addEventListener('click', onGridClick('home'));
 $('results-grid').addEventListener('click', onGridClick('results'));
 $('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
 $('d-download').addEventListener('click', startDownload);
-$('d-trailer').addEventListener('click', function () { if (state.detail && state.detail.trailerId) openTrailer(state.detail.trailerId); });
-// Le lecteur YouTube (iframe) peut prendre le focus : pendant une bande-annonce, on le récupère pour garder la télécommande
-window.addEventListener('blur', function () { if (trailerOpen()) setTimeout(function () { window.focus(); $('trailer-close').focus(); }, 0); });
+$('d-trailer').addEventListener('click', function () { if (state.detail && state.detail.trailerId) openTrailerInYouTube(state.detail.trailerId); });
 $('d-back').addEventListener('click', function () { show(state.detailFrom); });
 
 try {
@@ -52,3 +50,5 @@ loadHome(true).then(function () {
   (first || $('search-box')).focus();
 });
 debug('info', 'app démarrée (v' + VERSION + ')');
+// Version avec journal : vérifie au démarrage que la recherche de bande-annonce aboutit sur la TV (résultat journalisé)
+if (LOG_URL) setTimeout(function () { findTrailer('Inception', '2010').catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); }); }, 3000);

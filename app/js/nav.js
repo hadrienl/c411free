@@ -84,13 +84,6 @@ document.addEventListener('keyup', function (e) {
 
 document.addEventListener('keydown', function (e) {
   var el = document.activeElement;
-  // Bande-annonce en plein écran : OK pause / lecture, RETOUR ferme, les autres touches sont ignorées
-  if (typeof trailerOpen === 'function' && trailerOpen()) {
-    e.preventDefault();
-    if (e.keyCode === KEY.BACK) closeTrailer();
-    else if (e.keyCode === KEY.ENTER || e.keyCode === KEY.PLAY_PAUSE) toggleTrailerPause();
-    return;
-  }
   // Fenêtre modale ouverte : navigation limitée à ses boutons, RETOUR la ferme
   if (modalOpen() || pickerOpen()) {
     e.preventDefault();

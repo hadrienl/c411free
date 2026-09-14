@@ -308,14 +308,8 @@ html.playing #ambient { display: none; }
 /* Progression de l'analyse des disques : seconde ligne sous le titre, hors du flux (ne pousse pas les boutons) */
 #downloads .brand { position: relative; }
 .scan-status { position: absolute; left: 2px; top: 100%; margin-top: 2px; font-size: 22px; font-weight: 400; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
-/* Bande-annonce : bouton de la fiche (masqué tant qu'aucune vidéo n'est trouvée) et lecteur plein écran */
+/* Bande-annonce : bouton de la fiche, masqué tant qu'aucune vidéo n'est trouvée */
 .btn.off { display: none; }
-#trailer { position: absolute; inset: 0; z-index: 28; display: none; background: #000; }
-#trailer.open { display: block; }
-#trailer-player, #trailer-player iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; pointer-events: none; }
-#trailer-status { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 1400px; padding: 24px 44px; border-radius: 26px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(10, 15, 28, .7); font-size: 34px; text-align: center; display: none; }
-#trailer-close { position: absolute; width: 1px; height: 1px; opacity: 0; outline: none; }
-.trailer-hint { position: absolute; right: 60px; bottom: 40px; padding: 10px 22px; border-radius: 16px; background: rgba(0, 0, 0, .55); color: var(--muted); font-size: 24px; }
 
 /* Suivi des séries : onglet séparé des types, pastille des nouveautés */
 .tab.follow { margin-left: 18px; }
