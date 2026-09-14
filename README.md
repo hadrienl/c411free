@@ -2,7 +2,7 @@
 
 App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à la télécommande :
 
-- **Catalogue c411** : nouveautés en vignettes, onglets (films, séries, animation, documentaires), recherche avec le clavier natif Samsung, fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV).
+- **Catalogue c411** : nouveautés en vignettes, tiroir de filtres (type, année, genre proposés par c411), recherche avec le clavier natif Samsung, fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV).
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Téléchargement** : envoi du .torrent au téléchargeur de la Freebox Ultra.
 - **Médias** : toutes les vidéos des disques de la Freebox, regroupées en films et dossiers d'épisodes, avec la progression des téléchargements en cours, les vidéos déjà vues et la suppression (appui long sur OK).
