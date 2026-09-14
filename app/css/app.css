@@ -263,10 +263,12 @@ html.playing #ambient { display: none; }
 /* minmax(0, 1fr) : un texte long (« Téléchargement · reste 5 min ») ne peut plus élargir sa colonne et pousser la grille
    hors de l'écran ; align-items: start : une vignette ne s'étire pas à la hauteur de la plus haute de sa rangée */
 .grid { grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: start; }
-.card { min-width: 0; }
-.cap, .sub { overflow-wrap: anywhere; }
-/* Place pour l'agrandissement et le halo de la vignette sélectionnée sur les bords */
-.grid-wrap, .list-wrap { padding: 22px 30px 40px; margin: 0 -30px; }
+.card { min-width: 0; padding: 6px 6px 10px; }
+.cap, .sub { overflow-wrap: anywhere; padding: 0 4px; } /* le texte ne touche pas le contour de sélection */
+/* Place pour l'agrandissement et le halo de la vignette sélectionnée : la zone défilante s'étend jusqu'aux bords de l'écran
+   (marge de l'écran reprise en padding), sinon le halo est coupé net contre le bord de la liste */
+.grid-wrap, .list-wrap { padding: 34px 80px 60px; margin: 0 -80px; }
+.card:focus { box-shadow: 0 0 0 1px rgba(255, 255, 255, .3), 0 12px 36px rgba(59, 130, 246, .45); }
 /* Pastilles en haut de l'affiche : rangées côte à côte, à la ligne si la place manque (plus de chevauchement) */
 .poster .badges { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
 .poster .badges .q { position: static; white-space: nowrap; }
