@@ -6,7 +6,7 @@ App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à l
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Téléchargement** : envoi du .torrent au téléchargeur de la Freebox Ultra.
 - **Médias** : toutes les vidéos des disques de la Freebox, regroupées en films et dossiers d'épisodes, avec la progression des téléchargements en cours, les vidéos déjà vues et la suppression (appui long sur OK).
-- **Lecteur intégré** (AVPlay, décodeur matériel) : pistes audio et sous-titres mémorisés, barre de lecture, reprise là où on s'était arrêté, épisode suivant à l'arrivée du générique.
+- **Lecteur intégré** (AVPlay, décodeur matériel) : pistes audio et sous-titres mémorisés, barre de lecture, reprise là où on s'était arrêté, « Passer le générique » (chapitres du fichier, sinon générique appris en sautant une fois sur un autre épisode de la série), épisode suivant à l'arrivée du générique de fin.
 
 L'app est autonome sur la TV : elle parle directement à c411 et à la Freebox, sans serveur.
 
@@ -91,4 +91,7 @@ Variables utiles : `TV_IP` (TV_IP par défaut), `LOG_HOST` (IP du Mac, détecté
   - `DELETE /downloads/{id}` supprime la tâche ; `/erase` supprime aussi ses fichiers.
   - `POST /fs/rm/` crée une tâche de fichiers, suivie avec `/fs/tasks/{id}`.
 - **c411** : un .torrent téléchargé compte pour le ratio. Il faut partager au moins 48 h, et l'app avertit avant de supprimer un partage plus récent.
-- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`.
+- **Génériques** : AVPlay ne donne accès ni à l'image, ni au son, ni aux chapitres.
+  - Les chapitres MKV sont lus directement dans le fichier : environ 1 épisode sur 6 en contient (mesuré sur les disques).
+  - Sinon, l'app retient le générique d'une série quand on saute vers l'avant au début d'un épisode : sauts enchaînés dans les 6 premières minutes, totalisant 20 s à 3 min.
+- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`.
