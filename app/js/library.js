@@ -29,10 +29,11 @@ function mediaCardHtml(m, posterCache, nowMs) {
   return '<div class="poster' + (inProgress ? ' incomplete' : '') + '"' + (q ? ' data-poster-key="' + esc(q.key) + '"' : '') + '>'
     + '<div class="ph">' + (m.kind === 'folder' ? '📁' : '🎬') + '</div>'
     + (url ? '<img src="' + esc(poster(url, 'w342')) + '" onerror="this.remove()">' : '')
+    + '<div class="badges">'
     + (m.kind === 'folder' ? '<span class="q">📁 ' + m.files.length + '</span>' : '')
-    + (started
-      ? '<span class="q right started">⏯ ' + Math.round(started * 100) + ' %</span><div class="resume-bar"><div style="width:' + (started * 100).toFixed(1) + '%"></div></div>'
-      : seen ? '<span class="q right watched">' + seen + '</span>' : '')
+    + (started ? '<span class="q right started">⏯ ' + Math.round(started * 100) + ' %</span>' : seen ? '<span class="q right watched">' + seen.replace(' vus', '') + '</span>' : '')
+    + '</div>'
+    + (started ? '<div class="resume-bar"><div style="width:' + (started * 100).toFixed(1) + '%"></div></div>' : '')
     + (inProgress ? '<span class="dl-pct">' + pct.toFixed(0) + ' %</span><div class="dl-bar' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div>' : '')
     + '</div>'
     + '<div class="cap">' + esc(label(m.name)) + '</div>'

@@ -259,6 +259,19 @@ html, body {
 #ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 19, .25) 0%, rgba(6, 9, 19, .55) 60%, rgba(6, 9, 19, .75) 100%); }
 html.playing #ambient { display: none; }
 
+/* ---------- Grille : colonnes de largeur fixe ---------- */
+/* minmax(0, 1fr) : un texte long (« Téléchargement · reste 5 min ») ne peut plus élargir sa colonne et pousser la grille
+   hors de l'écran ; align-items: start : une vignette ne s'étire pas à la hauteur de la plus haute de sa rangée */
+.grid { grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: start; }
+.card { min-width: 0; }
+.cap, .sub { overflow-wrap: anywhere; }
+/* Place pour l'agrandissement et le halo de la vignette sélectionnée sur les bords */
+.grid-wrap, .list-wrap { padding: 22px 30px 40px; margin: 0 -30px; }
+/* Pastilles en haut de l'affiche : rangées côte à côte, à la ligne si la place manque (plus de chevauchement) */
+.poster .badges { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.poster .badges .q { position: static; white-space: nowrap; }
+.poster .badges .right, .poster .badges .warn { margin-left: auto; }
+
 /* ---------- Défilement doux ---------- */
 /* Affiches du catalogue : apparition en fondu une fois chargées (pas de flash pendant le défilement) */
 .poster img.fade { opacity: 0; transition: opacity .35s ease; }

@@ -63,8 +63,10 @@ function cardHtml(prefix, t) {
     : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
     + '<div class="poster"><div class="ph">🎬</div>' + img
+    + '<div class="badges">'
     + (resolution(t.name) ? '<span class="q">' + resolution(t.name) + '</span>' : '')
-    + (nameAudioOk(t.name) ? '' : '<span class="q warn">⚠️ son</span>') + '</div>'
+    + (nameAudioOk(t.name) ? '' : '<span class="q warn">⚠️ son</span>')
+    + '</div></div>'
     + '<div class="cap">' + esc(text) + '</div>'
     + '<div class="sub">' + esc([shortLang(t.language, t.name), gb(t.size), '▲ ' + (t.seeders || 0)].filter(Boolean).join(' · ')) + '</div>'
     + '</div>';
