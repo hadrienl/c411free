@@ -968,8 +968,13 @@ function playerKey(e) {
   var onBar = !osdHidden && document.activeElement === $('seekbar');
   switch (code) {
     case KEY.BACK:
-      if (onBar && scrubCancel()) break; // 1er appui : annule le déplacement en cours
-      stopPlayback();
+      if (onBar && scrubCancel()) break; // annule d'abord le déplacement en cours sur la barre
+      if (!osdHidden) {                   // contrôles affichés : RETOUR les masque, la lecture continue
+        clearTimeout(player.osdTimer);
+        $('osd').classList.add('hidden');
+        return;
+      }
+      stopPlayback();                     // contrôles masqués : RETOUR quitte la lecture
       return;
     case KEY.STOP: stopPlayback(); return;
     case KEY.PLAY_PAUSE: togglePause(); break;
