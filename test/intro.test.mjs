@@ -40,7 +40,10 @@ test('apprentissage : sauts enchaînés au début d\'un épisode', () => {
   assert.equal(app.learnedSkip(pending, 5000), null, 'saut pas encore terminé');
   assert.deepEqual(plain(app.learnedSkip(pending, 8000)), { start: 60000, end: 152000 });
 
-  assert.equal(app.trackSkip(pending, 150000, 140000, 3000), null, 'retour en arrière : annulé');
+  const corrected = app.trackSkip(pending, 153000, 140000, 3000);
+  assert.deepEqual(plain(app.learnedSkip(corrected, 9000)), { start: 60000, end: 140000 }, 'dépassement puis retour : arrivée finale retenue');
+  assert.equal(app.trackSkip(null, 150000, 140000, 3000), null, 'retour en arrière isolé : ignoré');
+  assert.equal(app.learnedSkip(app.trackSkip(app.trackSkip(null, 60000, 90000, 0), 91000, 50000, 1000), 9000), null, 'revenu avant le départ : rien appris');
   assert.equal(app.learnedSkip(app.trackSkip(null, 10 * 60000, 10 * 60000 + 30000, 0), 9000), null, 'trop tard dans l\'épisode');
   assert.equal(app.learnedSkip(app.trackSkip(null, 60000, 70000, 0), 9000), null, 'trop court');
   assert.equal(app.learnedSkip(app.trackSkip(null, 60000, 600000, 0), 9000), null, 'trop long : pas un générique');

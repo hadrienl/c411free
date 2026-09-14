@@ -52,8 +52,13 @@ function updateOsd() {
       if (cur >= creditsAt && nextFile()) showNextEpisode();
     }
     updateSkipIntro(cur);
-    var learned = learnedSkip(player.skipPending, Date.now());
-    if (learned) { player.skipPending = null; rememberIntro(learned); }
+    // Série de sauts terminée : retenue comme générique de la série si elle est plausible, sinon oubliée
+    if (player.skipPending && Date.now() - player.skipPending.lastAt >= SKIP_SETTLE_MS) {
+      var learned = learnedSkip(player.skipPending, Date.now());
+      if (learned) rememberIntro(learned);
+      else debug('info', 'saut non retenu comme générique', { debut: player.skipPending.start, fin: player.skipPending.end, serie: currentSeriesKey() });
+      player.skipPending = null;
+    }
   } catch (e) { /* lecteur pas prêt */ }
 }
 

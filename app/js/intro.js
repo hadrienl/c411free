@@ -45,13 +45,13 @@ function seriesKey(fileName, folderName) {
   return null;
 }
 
-// Nouveau saut de fromMs à toMs : prolonge le saut en cours ou en démarre un ; un retour en arrière l'annule
+// Nouveau saut de fromMs à toMs. Enchaîné au précédent, il le prolonge ou le corrige (on dépasse puis on revient un peu) :
+// le générique va du point de départ au point d'arrivée final. Un retour en arrière isolé n'est pas un saut de générique.
 function trackSkip(pending, fromMs, toMs, nowMs) {
-  if (toMs <= fromMs) return null;
   if (pending && nowMs - pending.lastAt < SKIP_SETTLE_MS && Math.abs(fromMs - pending.end) < SKIP_CHAIN_GAP_MS) {
     return { start: pending.start, end: toMs, lastAt: nowMs };
   }
-  return { start: fromMs, end: toMs, lastAt: nowMs };
+  return toMs > fromMs ? { start: fromMs, end: toMs, lastAt: nowMs } : null;
 }
 
 // Saut terminé et plausible comme générique de début → { start, end }, sinon null
