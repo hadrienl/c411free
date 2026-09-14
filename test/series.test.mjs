@@ -83,6 +83,12 @@ test('résumé : nouveautés d\'abord, nombre de nouveautés, dernière sortie e
   assert.equal(app.seriesSummary(series, []).newCount, 0);
 });
 
+test('ne plus suivre une série', () => {
+  const all = { lost: { title: 'Lost' }, 'young sheldon': { title: 'Young Sheldon' } };
+  assert.deepEqual(plain(Object.keys(app.removeSeries(all, 'lost'))), ['young sheldon']);
+  assert.deepEqual(plain(Object.keys(app.removeSeries(all, 'inconnue'))), ['young sheldon']);
+});
+
 test('onglet Suivi : pas un filtre envoyé à c411', () => {
   assert.equal(app.isFollowMode({ subcat: 'follow' }), true);
   assert.equal(app.filterParams({ subcat: 'follow', year: '', genre: '' }).subcat, '');

@@ -129,6 +129,43 @@ async function loadFollowed() {
   debug('info', 'séries suivies', { series: list.length, avecNouveautes: list.filter(function (x) { return x.summary.newCount; }).length });
 }
 
+// Appui long sur une série suivie : ne plus la suivre (les fichiers ne sont pas touchés)
+function openSeriesMenu(index) {
+  var x = state.follow.list[index];
+  if (!x) return;
+  openModal({
+    title: x.series.title,
+    text: 'Vu jusqu\'à ' + episodeCode(x.series),
+    buttons: [
+      { label: '🗑 Ne plus suivre cette série…', danger: true, action: function () { confirmUnfollow(x); } },
+      { label: 'Annuler', action: closeModal }
+    ]
+  });
+}
+
+function confirmUnfollow(x) {
+  openModal({
+    title: 'Ne plus suivre « ' + x.series.title + ' » ?',
+    text: 'La série disparaît du Suivi ; vos fichiers ne sont pas supprimés.\nElle reviendra si vous regardez un nouvel épisode.',
+    buttons: [
+      { label: '🗑 Ne plus suivre', danger: true, action: function () { unfollowSeries(x); } },
+      { label: 'Annuler', focus: true, action: closeModal }
+    ]
+  });
+}
+
+function unfollowSeries(x) {
+  saveSeries(removeSeries(loadSeries(), x.key));
+  var list = state.follow.list, index = list.indexOf(x);
+  if (index >= 0) list.splice(index, 1);
+  closeModal();
+  var grid = $('home-grid');
+  grid.innerHTML = list.map(followCardHtml).join('') || '<div class="empty">Aucune série suivie pour l\'instant : regardez un épisode dans Médias, la série apparaîtra ici.</div>';
+  var target = $('s-' + Math.min(Math.max(index, 0), list.length - 1)) || $('open-filters');
+  if (target) target.focus();
+  toast('« ' + x.series.title + ' » n\'est plus suivie');
+}
+
 // Releases disponibles d'une série, nouveautés en premier (écran des résultats)
 function openSeries(index) {
   var x = state.follow.list[index];

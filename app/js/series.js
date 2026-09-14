@@ -71,6 +71,13 @@ function recordEpisode(all, key, title, info, alias, nowMs) {
   return all;
 }
 
+// Ne plus suivre une série (elle revient si un nouvel épisode est regardé)
+function removeSeries(all, key) {
+  delete all[key];
+  delete seriesSearchCache[key];
+  return all;
+}
+
 // Reprise de l'historique « vu » existant ({ <tâche>: { files: { <nom>: horodatage } } }) : épisodes SxxEyy seulement
 function seriesFromWatched(watched) {
   var all = {};

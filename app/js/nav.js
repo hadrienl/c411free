@@ -37,8 +37,12 @@ function move(dir, only) {
 var LONG_PRESS_MS = 500;
 var enterHold = null; // { el, row, start, repeated, done, timer }
 
+// Éléments qui ont un menu par appui long : médias (suppression) et séries suivies (ne plus suivre)
 function enterHoldRow(el) {
-  return state.screen === 'downloads' && !modalOpen() && el && el.closest && el.closest('#downloads-list [data-id]');
+  if (modalOpen() || !el || !el.closest) return null;
+  if (state.screen === 'downloads') return el.closest('#downloads-list [data-id]');
+  if (state.screen === 'home') return el.closest('#home-grid [data-series]');
+  return null;
 }
 
 function finishEnterHold(longPress) {
@@ -47,7 +51,8 @@ function finishEnterHold(longPress) {
   h.done = true;
   h.long = longPress;
   clearTimeout(h.timer);
-  if (longPress) openMediaMenu(Number(h.row.getAttribute('data-id')));
+  if (longPress && h.row.hasAttribute('data-series')) openSeriesMenu(Number(h.row.getAttribute('data-series')));
+  else if (longPress) openMediaMenu(Number(h.row.getAttribute('data-id')));
   else h.el.click();
 }
 
