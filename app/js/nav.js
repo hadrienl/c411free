@@ -106,6 +106,7 @@ document.addEventListener('keydown', function (e) {
     case KEY.BACK:
       e.preventDefault();
       if (state.screen === 'home' && filtersOpen()) toggleFilters(false); // RETOUR ferme d'abord le tiroir des filtres
+      else if (scrollListToTop()) { /* liste défilée : remontée en haut, on reste sur l'écran */ }
       else if (state.screen === 'home') tizen.application.getCurrentApplication().exit();
       else if (state.screen === 'detail') show(state.detailFrom);
       else if (state.screen === 'files') openDownloads();
@@ -113,6 +114,18 @@ document.addEventListener('keydown', function (e) {
       break;
   }
 });
+
+// RETOUR dans une liste défilée (vignettes, médias, épisodes) : remonte tout en haut et sélectionne le premier élément.
+// Renvoie false si la liste est déjà en haut : RETOUR fait alors son action habituelle (quitter, écran précédent).
+var SCROLL_TOP_THRESHOLD_PX = 10;
+function scrollListToTop() {
+  var wrap = document.querySelector('.screen.active .grid-wrap, .screen.active .list-wrap');
+  if (!wrap || wrap.scrollTop < SCROLL_TOP_THRESHOLD_PX) return false;
+  var first = wrap.querySelector('[data-f]');
+  if (first) first.focus({ preventScroll: true });
+  wrap.scrollTo({ top: 0, behavior: 'smooth' });
+  return true;
+}
 
 // ---------- Liste déroulante (années, genres…) ----------
 // items : [{ value, label }] ; onPick(item) après fermeture ; RETOUR ferme sans choisir
