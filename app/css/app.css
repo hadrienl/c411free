@@ -119,6 +119,8 @@ html.playing, html.playing body { background: transparent; }
 .ctl:focus { border-color: #fff; background: var(--accent); transform: scale(1.1); }
 .ctl::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 16px); left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 12px; background: rgba(10, 15, 28, .95); border: 2px solid var(--accent); color: #eef3fb; font-size: 24px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
 .ctl:focus::after { opacity: 1; }
+/* Premier bouton, au bord de l'écran : bulle ancrée en haut à gauche du bouton (centrée, elle serait tronquée) */
+#ctl-restart::after { left: 0; transform: none; }
 .ctl.push { margin-left: auto; }
 #osd-state { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-size: 40px; padding: 20px 40px; border-radius: 20px; background: rgba(0,0,0,.6); display: none; }
 #subs { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; font-size: 46px; text-shadow: 0 0 6px #000, 0 0 12px #000; white-space: pre-line; }

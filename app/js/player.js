@@ -314,7 +314,7 @@ $('tm-list').addEventListener('click', function (e) {
 // --- Commandes ---
 function togglePause() {
   var av = webapis.avplay, st = avState();
-  if (st === 'PLAYING') { av.pause(); osdState('⏸ Pause'); renderPlayButton(true); }
+  if (st === 'PLAYING') { av.pause(); osdState('Pause'); renderPlayButton(true); }
   else if (st === 'PAUSED') { av.play(); osdState(''); renderPlayButton(false); }
 }
 
