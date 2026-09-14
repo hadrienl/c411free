@@ -16,15 +16,32 @@
       <span class="search-box" data-f tabindex="-1" id="search-box">🔎 <span id="search-label">Rechercher un film, une série…</span></span>
       <input id="query" type="text" placeholder="Titre du film ou de la série…" autocomplete="off">
     </div>
+    <span class="btn" data-f tabindex="-1" id="open-filters">Filtres</span>
     <span class="btn" data-f tabindex="-1" id="open-downloads">🎬 Médias</span>
   </header>
-  <nav class="tabs" id="tabs">
-    <span class="btn tab selected" data-f tabindex="-1" data-subcat="">Tout</span>
-    <span class="btn tab" data-f tabindex="-1" data-subcat="6">Films</span>
-    <span class="btn tab" data-f tabindex="-1" data-subcat="7">Séries</span>
-    <span class="btn tab" data-f tabindex="-1" data-subcat="1">Animation</span>
-    <span class="btn tab" data-f tabindex="-1" data-subcat="4">Documentaires</span>
-  </nav>
+  <div class="drawer" id="filters">
+    <div class="drawer-inner">
+      <div class="drawer-panel">
+        <div class="filter-row">
+          <span class="filter-label">Type</span>
+          <nav class="tabs" id="filter-type">
+            <span class="btn tab selected" data-f tabindex="-1" data-subcat="">Tout</span>
+            <span class="btn tab" data-f tabindex="-1" data-subcat="6">Films</span>
+            <span class="btn tab" data-f tabindex="-1" data-subcat="7">Séries</span>
+            <span class="btn tab" data-f tabindex="-1" data-subcat="1,2">Animation</span>
+            <span class="btn tab" data-f tabindex="-1" data-subcat="4,57">Documentaires</span>
+          </nav>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Année</span>
+          <span class="btn select" data-f tabindex="-1" id="filter-year">Toutes les années</span>
+          <span class="filter-label second">Genre</span>
+          <span class="btn select" data-f tabindex="-1" id="filter-genre">Tous les genres</span>
+          <span class="btn reset" data-f tabindex="-1" id="filter-reset">Réinitialiser</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="grid-wrap"><div class="grid" id="home-grid"></div></div>
 </section>
 
@@ -103,6 +120,8 @@
   </div>
 </section>
 
+<div id="picker"><div class="picker-title" id="picker-title"></div><div id="picker-list"></div></div>
+
 <div id="modal">
   <div class="modal-box">
     <div class="modal-title" id="modal-title"></div>
@@ -121,6 +140,7 @@
 <script src="js/storage.js"></script>
 <script src="js/c411.js"></script>
 <script src="js/posters.js"></script>
+<script src="js/filters.js"></script>
 <script src="js/freebox.js"></script>
 <script src="js/media.js"></script>
 <script src="js/tracks.js"></script>

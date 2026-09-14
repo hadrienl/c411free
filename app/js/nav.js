@@ -12,9 +12,11 @@ function show(screen, focusEl) {
 }
 
 function focusables() {
-  var scope = modalOpen() ? '#modal [data-f]' : '.screen.active [data-f]';
+  var scope = pickerOpen() ? '#picker [data-f]' : modalOpen() ? '#modal [data-f]' : '.screen.active [data-f]';
   if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show, #skip-intro.show';
-  return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
+  return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) {
+    return el.offsetParent !== null && !el.closest('.drawer:not(.open)'); // tiroir fermé : ses boutons ne sont pas sélectionnables
+  });
 }
 
 // Déplacement vers l'élément le plus proche dans la direction, éventuellement limité aux éléments correspondant à `only`
@@ -85,9 +87,9 @@ document.addEventListener('keyup', function (e) {
 document.addEventListener('keydown', function (e) {
   var el = document.activeElement;
   // Fenêtre modale ouverte : navigation limitée à ses boutons, RETOUR la ferme
-  if (modalOpen()) {
+  if (modalOpen() || pickerOpen()) {
     e.preventDefault();
-    if (e.keyCode === KEY.BACK) closeModal();
+    if (e.keyCode === KEY.BACK) { if (pickerOpen()) closePicker(); else closeModal(); }
     else if (e.keyCode === KEY.UP) move('up');
     else if (e.keyCode === KEY.DOWN) move('down');
     else if (e.keyCode === KEY.ENTER && el && el.hasAttribute('data-f')) el.click();
@@ -110,12 +112,49 @@ document.addEventListener('keydown', function (e) {
       break;
     case KEY.BACK:
       e.preventDefault();
-      if (state.screen === 'home') tizen.application.getCurrentApplication().exit();
+      if (state.screen === 'home' && filtersOpen()) toggleFilters(false); // RETOUR ferme d'abord le tiroir des filtres
+      else if (state.screen === 'home') tizen.application.getCurrentApplication().exit();
       else if (state.screen === 'detail') show(state.detailFrom);
       else if (state.screen === 'files') openDownloads();
       else show('home');
       break;
   }
+});
+
+// ---------- Liste déroulante (années, genres…) ----------
+// items : [{ value, label }] ; onPick(item) après fermeture ; RETOUR ferme sans choisir
+var pickerState = { items: [], onPick: null, anchorId: null };
+
+function pickerOpen() { return $('picker').classList.contains('open'); }
+
+function openPicker(anchor, title, items, selected, onPick) {
+  pickerState = { items: items, onPick: onPick, anchorId: anchor.id };
+  $('picker-title').textContent = title;
+  $('picker-list').innerHTML = items.map(function (it, i) {
+    var checked = String(it.value) === String(selected);
+    return '<div class="picker-item" data-f tabindex="-1" id="pick-' + i + '" data-pick="' + i + '"><span class="check">' + (checked ? '✓' : '') + '</span>' + esc(it.label) + '</div>';
+  }).join('');
+  var r = anchor.getBoundingClientRect(), picker = $('picker');
+  picker.style.left = Math.max(40, Math.min(1920 - 560, r.left)) + 'px';
+  picker.style.top = Math.min(1080 - 700, r.bottom + 14) + 'px';
+  picker.classList.add('open');
+  var index = Math.max(0, items.findIndex(function (it) { return String(it.value) === String(selected); }));
+  var target = $('pick-' + index);
+  if (target) { target.focus(); target.scrollIntoView({ block: 'center' }); }
+}
+
+function closePicker() {
+  $('picker').classList.remove('open');
+  var anchor = pickerState.anchorId && $(pickerState.anchorId);
+  if (anchor) anchor.focus();
+}
+
+$('picker-list').addEventListener('click', function (e) {
+  var el = e.target.closest('[data-pick]');
+  if (!el) return;
+  var item = pickerState.items[Number(el.getAttribute('data-pick'))], onPick = pickerState.onPick;
+  closePicker();
+  if (item && onPick) onPick(item);
 });
 
 var modalState = { buttons: [], returnFocusId: null };

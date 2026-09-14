@@ -1,13 +1,16 @@
 // Démarrage : actions des écrans et chargement de l'accueil.
 
 // ---------- Actions ----------
-$('tabs').addEventListener('click', function (e) {
+$('open-filters').addEventListener('click', function () { toggleFilters(); });
+$('filter-type').addEventListener('click', function (e) {
   var tab = e.target.closest('[data-subcat]');
   if (!tab) return;
-  state.subcat = tab.getAttribute('data-subcat');
-  document.querySelectorAll('[data-subcat]').forEach(function (x) { x.classList.toggle('selected', x === tab); });
-  loadHome(true);
+  state.filters.subcat = tab.getAttribute('data-subcat');
+  applyFilters();
 });
+$('filter-year').addEventListener('click', pickYear);
+$('filter-genre').addEventListener('click', pickGenre);
+$('filter-reset').addEventListener('click', resetFilters);
 $('dl-sorts').addEventListener('click', function (e) {
   var tab = e.target.closest('[data-sort]');
   if (!tab) return;
@@ -38,6 +41,7 @@ try {
   ['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind'].forEach(function (k) { tizen.tvinputdevice.registerKey(k); });
 } catch (e) { /* hors TV */ }
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redéployez avec tools/deploy-tv.sh', true);
+renderFilters();
 loadHome(true).then(function () {
   var first = $('home-grid').querySelector('[data-f]');
   (first || $('search-box')).focus();

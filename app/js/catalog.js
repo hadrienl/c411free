@@ -1,4 +1,59 @@
-// Catalogue c411 : nouveautés, recherche (clavier natif), fiche détaillée et envoi à la Freebox.
+// Catalogue c411 : nouveautés, filtres, recherche (clavier natif), fiche détaillée et envoi à la Freebox.
+
+// ---------- Filtres : tiroir animé sous l'en-tête de l'accueil ----------
+state.filters = emptyFilters();
+var FILTERS_ANIM_MS = 380;
+var filtersSettleTimer = null;
+
+function filtersOpen() { return $('filters').classList.contains('open'); }
+
+function toggleFilters(open) {
+  var drawer = $('filters');
+  open = open == null ? !filtersOpen() : open;
+  clearTimeout(filtersSettleTimer);
+  drawer.classList.remove('settled');
+  drawer.classList.toggle('open', open);
+  if (open) {
+    // Débordement autorisé une fois ouvert, pour que le halo des boutons sélectionnés ne soit pas coupé
+    filtersSettleTimer = setTimeout(function () { drawer.classList.add('settled'); }, FILTERS_ANIM_MS);
+    var first = drawer.querySelector('.tab.selected') || drawer.querySelector('[data-f]');
+    if (first) first.focus();
+    loadGenres().then(renderFilters); // prépare la liste des genres
+  } else {
+    $('open-filters').focus();
+  }
+}
+
+function renderFilters() {
+  var f = state.filters, n = activeFilterCount(f);
+  document.querySelectorAll('#filter-type [data-subcat]').forEach(function (x) { x.classList.toggle('selected', x.getAttribute('data-subcat') === f.subcat); });
+  $('filter-year').innerHTML = esc(f.year || 'Toutes les années') + '<span class="caret">▾</span>';
+  $('filter-genre').innerHTML = esc((f.genre && genreName(f.genre)) || 'Tous les genres') + '<span class="caret">▾</span>';
+  $('open-filters').innerHTML = FILTER_ICON + 'Filtres' + (n ? '<span class="count">' + n + '</span>' : '');
+}
+
+function applyFilters() {
+  renderFilters();
+  state.lastFocus.home = null;
+  loadHome(true);
+}
+
+function pickYear() {
+  var items = [{ value: '', label: 'Toutes les années' }].concat(yearChoices(new Date().getFullYear()).map(function (y) { return { value: String(y), label: String(y) }; }));
+  openPicker($('filter-year'), 'Année', items, state.filters.year, function (it) { state.filters.year = it.value; applyFilters(); });
+}
+
+async function pickGenre() {
+  var genres = await loadGenres();
+  if (!genres.length) { toast('Genres indisponibles pour le moment', true); return; }
+  var items = [{ value: '', label: 'Tous les genres' }].concat(genres.map(function (g) { return { value: String(g.id), label: g.name }; }));
+  openPicker($('filter-genre'), 'Genre', items, state.filters.genre, function (it) { state.filters.genre = it.value; applyFilters(); });
+}
+
+function resetFilters() {
+  state.filters = emptyFilters();
+  applyFilters();
+}
 
 function cardHtml(prefix, t) {
   var n = prettyName(t.name);
@@ -32,7 +87,7 @@ async function loadHome(reset) {
   var b = state.home;
   if (reset) { b.page = 0; b.items = []; }
   try {
-    var j = await c411('/api/torrents', { category: 1, subcat: state.subcat, sortBy: 'createdAt', sortOrder: 'desc', perPage: PER_PAGE, page: b.page + 1 });
+    var j = await c411('/api/torrents', Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc', perPage: PER_PAGE, page: b.page + 1 }, filterParams(state.filters)));
     b.page += 1;
     b.total = j.meta ? j.meta.total : j.data.length;
     b.lastBatch = j.data.length;
@@ -53,12 +108,13 @@ async function search(reset) {
     toast('Recherche de « ' + q + ' »…');
   }
   try {
-    var j = await c411('/api/torrents', { name: b.q, category: 1, sortBy: 'relevance', perPage: PER_PAGE, page: b.page + 1 });
+    var j = await c411('/api/torrents', Object.assign({ name: b.q, category: 1, sortBy: 'relevance', perPage: PER_PAGE, page: b.page + 1 }, filterParams(state.filters)));
     b.page += 1;
     b.total = j.meta ? j.meta.total : j.data.length;
     b.lastBatch = j.data.length;
     b.items = b.items.concat(j.data);
-    $('results-title').innerHTML = esc(b.total + ' résultat(s) pour « ' + b.q + ' »') + '<small>RETOUR nouvelle recherche</small>';
+    var summary = filterSummary(state.filters);
+    $('results-title').innerHTML = esc(b.total + ' résultat(s) pour « ' + b.q + ' »' + (summary ? ' · ' + summary : '')) + '<small>RETOUR nouvelle recherche</small>';
     var start = renderGrid('results-grid', 'r-', b, !reset);
     if (reset) { state.lastFocus.results = null; show('results'); }
     else if (b.items[start]) $('r-' + b.items[start].infoHash).focus();

@@ -258,3 +258,28 @@ html, body {
 #ambient .amb.on { opacity: 1; }
 #ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 19, .25) 0%, rgba(6, 9, 19, .55) 60%, rgba(6, 9, 19, .75) 100%); }
 html.playing #ambient { display: none; }
+
+/* ---------- Filtres : tiroir animé entre l'en-tête et les vignettes ---------- */
+.btn .ico { width: 30px; height: 30px; fill: currentColor; vertical-align: -5px; margin-right: 10px; }
+.btn .count { display: inline-block; min-width: 38px; margin-left: 12px; padding: 0 10px; border-radius: 19px; background: var(--accent); color: #fff; font-size: 24px; line-height: 38px; text-align: center; vertical-align: 3px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45); }
+.drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); margin-bottom: 0; transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin-bottom .38s ease; }
+.drawer.open { grid-template-rows: 1fr; opacity: 1; transform: none; margin-bottom: 18px; }
+.drawer-inner { min-height: 0; overflow: hidden; margin: 0 -24px; padding: 0 24px; }
+.drawer.settled .drawer-inner { overflow: visible; }
+.drawer-panel { display: flex; flex-direction: column; gap: 20px; margin: 10px 0 14px; padding: 24px 30px; border-radius: 30px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(16, 24, 46, .42); box-shadow: var(--glass-inner), var(--glass-drop); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.filter-row { display: flex; align-items: center; gap: 18px; }
+.filter-row .tabs { margin: 0; }
+.filter-label { min-width: 120px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.filter-label.second { min-width: 0; margin-left: 26px; }
+.btn.select { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 340px; }
+.btn.select .caret { opacity: .7; }
+.btn.reset { margin-left: auto; }
+
+/* Liste déroulante en verre (années, genres) */
+#picker { position: absolute; z-index: 22; display: none; width: 520px; max-height: 660px; overflow-y: auto; scrollbar-width: none; padding: 16px; border-radius: 28px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(10, 15, 28, .62); box-shadow: var(--glass-inner), 0 26px 64px rgba(0, 0, 0, .55); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+#picker::-webkit-scrollbar { display: none; }
+#picker.open { display: block; }
+.picker-title { margin: 6px 0 10px 14px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.picker-item { display: flex; align-items: center; gap: 14px; padding: 12px 20px; margin-bottom: 4px; border-radius: 16px; border: 2px solid transparent; font-size: 30px; transition: background .12s, box-shadow .12s, border-color .12s; }
+.picker-item .check { width: 30px; flex: none; color: var(--ok); }
+.picker-item:focus { background: var(--glass-focus), rgba(59, 130, 246, .38); border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); }
