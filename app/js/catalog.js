@@ -276,6 +276,8 @@ async function openDetail(hash, from) {
   $('d-badges').innerHTML = '';
   $('d-audio').textContent = '';
   state.detail = { infoHash: hash, name: item.name, size: item.size };
+  $('d-trailer').classList.add('off');
+  state.detail.trailerId = null;
   show('detail', $('d-download'));
 
   try {
@@ -284,6 +286,13 @@ async function openDetail(hash, from) {
     var meta = d.metadata || {};
     var tmdb = meta.tmdbData || {};
     state.detail = { infoHash: hash, name: d.name, size: d.size };
+
+    // Bande-annonce cherchée sur YouTube en arrière-plan : le bouton apparaît quand une vidéo est trouvée
+    findTrailer(tmdb.title || n.title, tmdb.year || n.year).then(function (videoId) {
+      if (!videoId || !state.detail || state.detail.infoHash !== hash) return;
+      state.detail.trailerId = videoId;
+      $('d-trailer').classList.remove('off');
+    }).catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); });
 
     if (tmdb.backdropUrl) $('d-backdrop').style.backgroundImage = 'url("' + tmdb.backdropUrl + '")';
     if (tmdb.posterUrl) $('d-poster').src = tmdb.posterUrl;

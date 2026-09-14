@@ -36,6 +36,9 @@ $('home-grid').addEventListener('click', onGridClick('home'));
 $('results-grid').addEventListener('click', onGridClick('results'));
 $('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
 $('d-download').addEventListener('click', startDownload);
+$('d-trailer').addEventListener('click', function () { if (state.detail && state.detail.trailerId) openTrailer(state.detail.trailerId); });
+// Le lecteur YouTube (iframe) peut prendre le focus : pendant une bande-annonce, on le récupère pour garder la télécommande
+window.addEventListener('blur', function () { if (trailerOpen()) setTimeout(function () { window.focus(); $('trailer-close').focus(); }, 0); });
 $('d-back').addEventListener('click', function () { show(state.detailFrom); });
 
 try {
