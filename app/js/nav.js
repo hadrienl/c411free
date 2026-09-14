@@ -100,6 +100,13 @@ document.addEventListener('keydown', function (e) {
     else if (e.keyCode === KEY.IME_CANCEL || e.keyCode === KEY.BACK) { e.preventDefault(); closeSearch(false); }
     return;
   }
+  // Bandeau d'accueil sélectionné : ◀ ▶ changent de titre (et relancent le délai du passage automatique)
+  if (el && el.id === 'hero' && (e.keyCode === KEY.LEFT || e.keyCode === KEY.RIGHT)) {
+    e.preventDefault();
+    heroStep(e.keyCode === KEY.LEFT ? -1 : 1);
+    startHeroTimer();
+    return;
+  }
   switch (e.keyCode) {
     case KEY.UP: e.preventDefault(); move('up'); break;
     case KEY.DOWN: e.preventDefault(); move('down'); break;

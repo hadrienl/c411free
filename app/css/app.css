@@ -284,6 +284,29 @@ html.playing #ambient { display: none; }
 .grid-wrap, .list-wrap { transition: opacity .2s ease; }
 .grid-wrap.fade-out, .list-wrap.fade-out { opacity: 0; }
 
+/* ---------- Bandeau d'accueil (exclusivités populaires) ---------- */
+/* Pleine largeur en tête de la zone défilante : il disparaît en douceur quand on descend dans la grille */
+#hero { position: relative; height: 640px; margin: -34px -80px 40px; overflow: hidden; outline: none; transition: box-shadow .2s; }
+#hero.off { display: none; }
+#hero .hero-img { position: absolute; inset: 0; background-size: cover; background-position: center 22%; opacity: 0; transition: opacity 1.1s ease; }
+#hero .hero-img.on { opacity: 1; }
+#hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(6, 9, 19, .94) 0%, rgba(6, 9, 19, .72) 36%, rgba(6, 9, 19, .12) 68%, rgba(6, 9, 19, 0) 100%),
+              linear-gradient(0deg, #060913 0%, rgba(6, 9, 19, .55) 22%, rgba(6, 9, 19, 0) 50%); }
+#hero:focus { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .85), inset 0 0 60px rgba(59, 130, 246, .35); }
+.hero-content { position: absolute; left: 80px; bottom: 76px; width: 940px; z-index: 1; }
+.hero-content.in { animation: hero-in .7s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes hero-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.hero-kicker { margin-bottom: 10px; font-size: 24px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #93c5fd; }
+.hero-title { margin: 0 0 14px; font-size: 76px; font-weight: 800; line-height: 1.02; letter-spacing: -1px; text-shadow: 0 4px 28px rgba(0, 0, 0, .6); }
+.hero-meta { margin-bottom: 16px; font-size: 28px; color: #d7deea; }
+.hero-overview { margin: 0; font-size: 28px; line-height: 1.42; color: #c9d3e3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-hint { margin-top: 22px; font-size: 24px; color: var(--muted); opacity: 0; transition: opacity .2s; }
+#hero:focus .hero-hint { opacity: 1; }
+.hero-dots { position: absolute; right: 80px; bottom: 84px; z-index: 1; display: flex; gap: 10px; }
+.hero-dots span { width: 12px; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, .35); transition: width .35s ease, background .35s ease; }
+.hero-dots span.on { width: 38px; background: #fff; }
+
 /* ---------- Défilement infini : indicateur de chargement sous la grille ---------- */
 .grid-loading { display: none; align-items: center; justify-content: center; gap: 18px; padding: 36px 0 10px; font-size: 28px; color: var(--muted); }
 .grid-loading.on { display: flex; }

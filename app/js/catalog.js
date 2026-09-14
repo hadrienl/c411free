@@ -34,6 +34,7 @@ function renderFilters() {
 
 function applyFilters() {
   renderFilters();
+  updateHeroVisibility();
   state.lastFocus.home = null;
   loadHome(true);
 }

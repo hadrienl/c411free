@@ -43,7 +43,19 @@
       </div>
     </div>
   </div>
-  <div class="grid-wrap"><div class="grid" id="home-grid"></div><div class="grid-loading"><span class="spinner"></span>Chargement…</div></div>
+  <div class="grid-wrap">
+    <div id="hero" class="off" data-f tabindex="-1">
+      <div class="hero-img"></div><div class="hero-img"></div>
+      <div class="hero-content" id="hero-content">
+        <div class="hero-kicker">Exclusivités populaires</div>
+        <h2 class="hero-title" id="hero-title"></h2>
+        <div class="hero-meta" id="hero-meta"></div>
+        <p class="hero-overview" id="hero-overview"></p>
+        <div class="hero-hint">OK voir la fiche · ◀ ▶ autres titres</div>
+      </div>
+      <div class="hero-dots" id="hero-dots"></div>
+    </div>
+    <div class="grid" id="home-grid"></div><div class="grid-loading"><span class="spinner"></span>Chargement…</div></div>
 </section>
 
 <section id="results" class="screen">
@@ -142,6 +154,7 @@
 <script src="js/posters.js"></script>
 <script src="js/filters.js"></script>
 <script src="js/paging.js"></script>
+<script src="js/hero.js"></script>
 <script src="js/freebox.js"></script>
 <script src="js/media.js"></script>
 <script src="js/tracks.js"></script>

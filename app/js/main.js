@@ -50,6 +50,12 @@ try {
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redéployez avec tools/deploy-tv.sh', true);
 ensureSeriesBackfill(); // suivi des séries : reprise de l'historique des épisodes déjà vus
 renderFilters();
+// Bandeau d'accueil : sélectionné au démarrage s'il est prêt et que la sélection n'a pas encore bougé
+$('hero').addEventListener('click', openHeroItem);
+loadHero().then(function () {
+  var active = document.activeElement, firstCard = $('home-grid').querySelector('[data-f]');
+  if (!$('hero').classList.contains('off') && state.screen === 'home' && (!active || active === document.body || active === firstCard)) $('hero').focus();
+}).catch(function (e) { debug('error', 'bandeau : ' + e.message); });
 loadHome(true).then(function () {
   var first = $('home-grid').querySelector('[data-f]');
   (first || $('search-box')).focus();
