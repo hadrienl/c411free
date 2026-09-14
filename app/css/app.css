@@ -39,6 +39,11 @@ html.playing, html.playing body { background: transparent; }
 /* Vignettes des Médias : badge « vu », téléchargement en cours (affiche assombrie, pourcentage et barre) */
 .poster .q.right { left: auto; right: 10px; }
 .poster .q.watched { color: var(--ok); }
+/* Commencé mais pas terminé : badge et barre d'avancement en bas de l'affiche */
+.poster .q.started { color: #9cc3ff; }
+.poster .resume-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: rgba(255, 255, 255, .25); }
+.poster .resume-bar > div { height: 100%; background: var(--accent); }
+.seen.started { background: #16305c; color: #9cc3ff; }
 .poster.incomplete img { filter: grayscale(.5) brightness(.55); }
 .poster .dl-pct { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 34px; font-weight: 700; text-shadow: 0 0 8px #000, 0 0 16px #000; }
 .poster .dl-bar { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 12px; border-radius: 6px; background: rgba(10, 15, 28, .85); overflow: hidden; }

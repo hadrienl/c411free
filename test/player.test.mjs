@@ -61,10 +61,13 @@ test('fichiers vus et positions de reprise mémorisés', () => {
 
   const file = { name: 'e02.mkv' };
   app.player = { task, file };
+  assert.equal(app.startedRatio(task, file), 0, 'pas encore commencé');
   app.persistPosition(60000, 100000);
   assert.equal(app.savedPosition(task, file), 60000);
+  assert.equal(app.startedRatio(task, file), 0.6, 'commencé : 60 %');
   app.persistPosition(96000, 100000); // au-delà de 95 % : terminé
   assert.equal(app.savedPosition(task, file), 0);
+  assert.equal(app.startedRatio(task, file), 0, 'terminé : plus « en cours »');
   app.persistPosition(5000, 100000); // moins de 10 s : rien à reprendre
   assert.equal(app.savedPosition(task, file), 0);
 });

@@ -20,6 +20,7 @@ function mediaCardHtml(m, posterCache, nowMs) {
   var active = !!t && t.status === 'downloading';
   var pct = t ? (t.rx_pct || 0) / 100 : 0;
   var seen = watchedBadge(mediaOwner(m));
+  var started = mediaStartedRatio(m);
   var q = posterQuery(m);
   var url = q ? cachedPoster(posterCache, q, nowMs) : '';
   var sub = inProgress
@@ -29,11 +30,22 @@ function mediaCardHtml(m, posterCache, nowMs) {
     + '<div class="ph">' + (m.kind === 'folder' ? '📁' : '🎬') + '</div>'
     + (url ? '<img src="' + esc(poster(url, 'w342')) + '" onerror="this.remove()">' : '')
     + (m.kind === 'folder' ? '<span class="q">📁 ' + m.files.length + '</span>' : '')
-    + (seen ? '<span class="q right watched">' + seen + '</span>' : '')
+    + (started
+      ? '<span class="q right started">⏯ ' + Math.round(started * 100) + ' %</span><div class="resume-bar"><div style="width:' + (started * 100).toFixed(1) + '%"></div></div>'
+      : seen ? '<span class="q right watched">' + seen + '</span>' : '')
     + (inProgress ? '<span class="dl-pct">' + pct.toFixed(0) + ' %</span><div class="dl-bar' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div>' : '')
     + '</div>'
     + '<div class="cap">' + esc(label(m.name)) + '</div>'
     + '<div class="sub">' + esc(sub.filter(Boolean).join(' · ')) + '</div>';
+}
+
+// Film commencé mais pas terminé : avancement de sa position de reprise (les dossiers affichent leurs épisodes vus)
+function mediaStartedRatio(m) {
+  return m.kind === 'file' && m.files.length === 1 ? startedRatio(mediaOwner(m), m.files[0]) : 0;
+}
+
+function startedBadge(ratio, prefix) {
+  return '<span class="seen started">⏯ ' + (prefix || '') + Math.round(ratio * 100) + ' %</span>';
 }
 
 // Ligne d'un média (vue liste)
@@ -42,7 +54,8 @@ function mediaRowHtml(m, index) {
   var inProgress = !!t && !isPlayable(t);
   var active = !!t && t.status === 'downloading';
   var pct = t ? (t.rx_pct || 0) / 100 : 0;
-  var seen = watchedBadge(mediaOwner(m));
+  var started = mediaStartedRatio(m);
+  var seen = started ? '' : watchedBadge(mediaOwner(m));
   var icon = inProgress ? (ICON[t.status] || '⬇️') : m.kind === 'folder' ? '📁' : '🎬';
   var meta = [];
   if (m.kind === 'folder') meta.push(m.files.length + ' vidéos');
@@ -50,7 +63,7 @@ function mediaRowHtml(m, index) {
   meta.push('ajouté ' + fmtDate(mediaDate(m)));
   if (!inProgress) meta.push('▶ OK pour regarder');
   return '<span class="icon">' + icon + '</span>'
-    + '<div class="main"><div class="title">' + esc(label(m.name)) + (seen ? ' <span class="seen">' + seen + '</span>' : '') + '</div>'
+    + '<div class="main"><div class="title">' + esc(label(m.name)) + (started ? ' ' + startedBadge(started) : seen ? ' <span class="seen">' + seen + '</span>' : '') + '</div>'
     + '<div class="meta">' + esc(meta.join(' · ')) + '</div></div>'
     + '<span class="size">' + gb(m.size) + '</span>'
     + (t
@@ -222,20 +235,21 @@ function renderFiles() {
   var seenCount = ft.files.filter(function (f) { return entry.files[f.name]; }).length;
   $('files-title').textContent = label(ft.task.name) + ' — ' + ft.files.length + ' vidéos' + (seenCount ? ' · ' + seenCount + ' vue(s)' : '');
   $('files-list').innerHTML = ft.files.map(function (f, i) {
-    var seen = !!entry.files[f.name];
+    var started = startedRatio(ft.task, f);
+    var seen = !started && !!entry.files[f.name];
     return '<div class="item" data-f tabindex="-1" id="file-' + i + '" data-file="' + i + '">'
-      + '<span class="icon' + (seen ? ' seen' : '') + '">' + (seen ? '👁' : '▶') + '</span>'
-      + '<div class="main"><div class="title">' + esc(label(f.name)) + (seen ? ' <span class="seen">Vu</span>' : '') + '</div>'
+      + '<span class="icon' + (seen || started ? ' seen' : '') + '">' + (started ? '⏯' : seen ? '👁' : '▶') + '</span>'
+      + '<div class="main"><div class="title">' + esc(label(f.name)) + (started ? ' ' + startedBadge(started, 'En cours · ') : seen ? ' <span class="seen">Vu</span>' : '') + '</div>'
       + '<div class="meta">' + esc(f.name) + '</div></div>'
       + '<span class="size">' + gb(f.size) + '</span></div>';
   }).join('');
 }
 
-// Ouvre la liste sur le premier fichier non vu (ou le premier si tout a été vu)
+// Ouvre la liste sur le premier fichier commencé ou non vu (ou le premier si tout a été vu)
 function showFiles() {
   var ft = state.filesTask;
   var entry = watchedEntry(ft.task);
-  var index = ft.files.findIndex(function (f) { return !entry.files[f.name]; });
+  var index = ft.files.findIndex(function (f) { return startedRatio(ft.task, f) > 0 || !entry.files[f.name]; });
   var target = $('file-' + (index < 0 ? 0 : index));
   show('files', target);
   if (target) target.scrollIntoView({ block: 'center' });

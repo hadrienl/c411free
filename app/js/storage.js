@@ -74,6 +74,12 @@ function loadPositions() { try { return JSON.parse(localStorage.getItem(POSITION
 function storePositions(all) { try { localStorage.setItem(POSITIONS_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
 function savedPosition(task, file) { var p = loadPositions()[positionKey(task, file)]; return p && p.pos > 0 ? p.pos : 0; }
 
+// Avancement d'un fichier commencé mais pas terminé (position de reprise mémorisée) : entre 0 et 1, 0 sinon
+function startedRatio(task, file) {
+  var p = loadPositions()[positionKey(task, file)];
+  return p && p.pos > 0 && p.dur > 0 ? Math.min(1, p.pos / p.dur) : 0;
+}
+
 function clearPosition(task, file) {
   var all = loadPositions(), key = positionKey(task, file);
   if (all[key]) { delete all[key]; storePositions(all); }
