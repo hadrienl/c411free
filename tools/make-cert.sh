@@ -14,6 +14,13 @@ PASSWORD="$(cat "$ROOT/secrets/tizen-cert.password")"
 LOGIN_URL="https://account.samsung.com/mobile/account/check.do?serviceID=v285zxnl3h&actionID=StartOAuth2&accessToken=Y&redirect_uri=http://localhost:4794/signin/callback"
 
 mkdir -p "$WORK"
+# Garde-fou : régénérer remplace les clés. La TV refuse alors toute mise à jour de l'app installée
+# (« Author certificate not match ») jusqu'à sa désinstallation, qui efface ses données.
+if ls "$WORK"/certificates/*.p12 >/dev/null 2>&1 && [ "${FORCE:-0}" != 1 ]; then
+  echo "❌ Des certificats existent déjà dans $WORK/certificates."
+  echo "   Les régénérer oblige à désinstaller l'app de la TV (données effacées). Relancez avec FORCE=1 si c'est voulu."
+  exit 1
+fi
 rm -f "$WORK"/certificates/*.p12
 
 echo "🔐 Serveur de certificats sur http://localhost:4794 (TV $DUID, compte $EMAIL)"
