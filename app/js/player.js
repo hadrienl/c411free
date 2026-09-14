@@ -309,8 +309,29 @@ $('tm-list').addEventListener('click', function (e) {
 // --- Commandes ---
 function togglePause() {
   var av = webapis.avplay, st = avState();
-  if (st === 'PLAYING') { av.pause(); osdState('⏸ Pause'); $('ctl-play').textContent = '▶ Lecture'; }
-  else if (st === 'PAUSED') { av.play(); osdState(''); $('ctl-play').textContent = '⏸ Pause'; }
+  if (st === 'PLAYING') { av.pause(); osdState('⏸ Pause'); renderPlayButton(true); }
+  else if (st === 'PAUSED') { av.play(); osdState(''); renderPlayButton(false); }
+}
+
+var ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+var ICON_PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+function renderPlayButton(paused) {
+  var btn = $('ctl-play');
+  btn.innerHTML = paused ? ICON_PLAY : ICON_PAUSE;
+  btn.setAttribute('data-tip', paused ? 'Lecture' : 'Pause');
+}
+
+var SEEK_STEP_S = 15; // boutons, ◀ ▶ contrôles masqués, avance / retour rapides
+
+function restart() {
+  var av = webapis.avplay, st = avState();
+  if (st !== 'PLAYING' && st !== 'PAUSED') return;
+  try {
+    noteSeek(av.getCurrentTime(), 0);
+    av.seekTo(0, function () { updateOsd(); }, function () {});
+    player.introDismissed = false; // le générique peut à nouveau être proposé
+    osdState('⏮ Depuis le début', 1200);
+  } catch (e) { /* lecteur indisponible */ }
 }
 function seek(seconds) {
   var av = webapis.avplay, st = avState();
@@ -328,12 +349,12 @@ $('controls').addEventListener('click', function (e) {
   var btn = e.target.closest('[data-act]');
   if (!btn) return;
   switch (btn.getAttribute('data-act')) {
-    case 'back': seek(-10); break;
+    case 'restart': restart(); break;
+    case 'back': seek(-SEEK_STEP_S); break;
     case 'toggle': togglePause(); break;
-    case 'fwd': seek(30); break;
+    case 'fwd': seek(SEEK_STEP_S); break;
     case 'audio': openMenu('audio'); break;
     case 'subs': openMenu('subs'); break;
-    case 'quit': stopPlayback(); break;
   }
 });
 
@@ -451,12 +472,12 @@ function playerKey(e) {
     case KEY.PLAY_PAUSE: togglePause(); break;
     case KEY.PLAY: if (avState() === 'PAUSED') togglePause(); break;
     case KEY.PAUSE: if (avState() === 'PLAYING') togglePause(); break;
-    case KEY.FF: seek(30); break;
-    case KEY.RW: seek(-10); break;
+    case KEY.FF: seek(SEEK_STEP_S); break;
+    case KEY.RW: seek(-SEEK_STEP_S); break;
     case KEY.LEFT:
     case KEY.RIGHT:
       if (onBar) debug('info', 'lecteur : touche barre', { key: code, repeat: !!e.repeat, maintenue: player.holdDir });
-      if (osdHidden) seek(code === KEY.LEFT ? -10 : 30);
+      if (osdHidden) seek(code === KEY.LEFT ? -SEEK_STEP_S : SEEK_STEP_S);
       else if (onBar) startScrubHold(code === KEY.LEFT ? -1 : 1);
       else move(code === KEY.LEFT ? 'left' : 'right');
       break;
@@ -511,7 +532,7 @@ async function play(file, returnTo, task) {
     $('osd-tracks').textContent = '';
     $('osd-time').textContent = '0:00 / 0:00';
     $('osd-bar').style.width = '0';
-    $('ctl-play').textContent = '⏸ Pause';
+    renderPlayButton(false);
     $('subs').textContent = '';
     $('track-menu').classList.remove('open');
     show('player', $('ctl-play'));
