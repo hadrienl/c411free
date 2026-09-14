@@ -259,6 +259,14 @@ html, body {
 #ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 19, .25) 0%, rgba(6, 9, 19, .55) 60%, rgba(6, 9, 19, .75) 100%); }
 html.playing #ambient { display: none; }
 
+/* ---------- Défilement doux ---------- */
+/* Affiches du catalogue : apparition en fondu une fois chargées (pas de flash pendant le défilement) */
+.poster img.fade { opacity: 0; transition: opacity .35s ease; }
+.poster img.fade.on { opacity: 1; }
+/* Retour en haut d'une longue liste : fondu enchaîné */
+.grid-wrap, .list-wrap { transition: opacity .2s ease; }
+.grid-wrap.fade-out, .list-wrap.fade-out { opacity: 0; }
+
 /* ---------- Défilement infini : indicateur de chargement sous la grille ---------- */
 .grid-loading { display: none; align-items: center; justify-content: center; gap: 18px; padding: 36px 0 10px; font-size: 28px; color: var(--muted); }
 .grid-loading.on { display: flex; }

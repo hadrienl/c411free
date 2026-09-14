@@ -6,6 +6,17 @@
 
 var SPATIAL_OFF_ROW_PENALTY = 1e6;
 
+// Défilement nécessaire pour montrer un élément (positions dans le contenu de la liste, marge autour) :
+// nouvelle position, ou null s'il est déjà entièrement visible
+function scrollTargetFor(elTop, elBottom, scrollTop, viewHeight, margin) {
+  if (elTop - margin < scrollTop) return Math.max(0, elTop - margin);
+  if (elBottom + margin > scrollTop + viewHeight) return elBottom + margin - viewHeight;
+  return null;
+}
+
+// Courbe de défilement : démarre vite, ralentit en douceur à l'arrivée
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
 function overlaps(a1, a2, b1, b2) { return a1 < b2 - 2 && a2 > b1 + 2; }
 
 // Distance horizontale entre deux rectangles : 0 s'ils se chevauchent en largeur

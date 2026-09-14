@@ -59,7 +59,7 @@ function cardHtml(prefix, t) {
   var n = prettyName(t.name);
   var text = n.title + (n.episode ? ' · ' + n.episode : '') + (n.year ? ' (' + n.year + ')' : '');
   var img = t.posterUrl
-    ? '<img src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onerror="this.remove()">'
+    ? '<img class="fade" src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">'
     : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
     + '<div class="poster"><div class="ph">🎬</div>' + img

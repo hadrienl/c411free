@@ -41,6 +41,17 @@ test('▲ remonte sur la rangée précédente, au plus proche horizontalement', 
   assert.equal(pick(TOUT, 'up'), undefined);
 });
 
+test('défilement : juste ce qu\'il faut pour montrer l\'élément avec sa marge', () => {
+  // Liste de 900 px de haut, défilée à 1000 ; marge 60
+  assert.equal(app.scrollTargetFor(1200, 1600, 1000, 900, 60), null, 'déjà visible');
+  assert.equal(app.scrollTargetFor(1700, 2100, 1000, 900, 60), 1260, 'en dessous : le bas de l\'élément arrive en bas de la liste');
+  assert.equal(app.scrollTargetFor(700, 1100, 1000, 900, 60), 640, 'au-dessus : le haut de l\'élément arrive en haut');
+  assert.equal(app.scrollTargetFor(20, 400, 300, 900, 60), 0, 'jamais au-dessus du début');
+  assert.equal(app.easeOutCubic(0), 0);
+  assert.equal(app.easeOutCubic(1), 1);
+  assert.ok(app.easeOutCubic(0.5) > 0.8, 'ralentit à l\'arrivée');
+});
+
 test('grille de vignettes : même colonne en ▲ ▼, pas de saut de rangée en ◀ ▶', () => {
   const cards = [0, 1, 2].flatMap((row) => [0, 1, 2, 3].map((col) => box(100 + col * 250, 500 + row * 420, 230, 400)));
   assert.equal(pick(cards[1], 'right', cards), cards[2]);

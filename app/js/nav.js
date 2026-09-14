@@ -28,7 +28,7 @@ function move(dir, only) {
   var others = list.filter(function (el) { return el !== cur; });
   var index = spatialPick(cur.getBoundingClientRect(), others.map(function (el) { return el.getBoundingClientRect(); }), dir);
   var best = others[index];
-  if (best) { best.focus(); best.scrollIntoView({ block: 'nearest' }); }
+  if (best) { best.focus({ preventScroll: true }); reveal(best); }
 }
 
 // Appui long sur OK dans les Médias : ouvre le menu de la ligne (appui court = action habituelle).
@@ -115,15 +115,63 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
+// ---------- Défilement animé ----------
+// Le défilement natif (focus, scrollIntoView) est instantané sur la TV : animation maison, recalée si on appuie
+// plusieurs fois de suite (elle repart de la position courante vers la nouvelle cible, sans à-coup).
+var SCROLL_ANIM_MS = 280;
+var SCROLL_MARGIN_PX = 60;
+var SCROLL_CONTAINERS = '.grid-wrap, .list-wrap, #picker, .track-menu';
+
+function animateScroll(wrap, top, duration) {
+  top = Math.max(0, Math.min(top, wrap.scrollHeight - wrap.clientHeight));
+  cancelAnimationFrame(wrap.scrollAnim);
+  var from = wrap.scrollTop, delta = top - from, start = null;
+  if (Math.abs(delta) < 1) { wrap.scrollTarget = null; return; }
+  wrap.scrollTarget = top;
+  function step(now) {
+    if (start === null) start = now;
+    var t = Math.min(1, (now - start) / (duration || SCROLL_ANIM_MS));
+    wrap.scrollTop = from + delta * easeOutCubic(t);
+    if (t < 1) wrap.scrollAnim = requestAnimationFrame(step);
+    else wrap.scrollTarget = null;
+  }
+  wrap.scrollAnim = requestAnimationFrame(step);
+}
+
+// Fait apparaître l'élément sélectionné dans sa liste, en douceur
+function reveal(el) {
+  var wrap = el.closest(SCROLL_CONTAINERS);
+  if (!wrap) { el.scrollIntoView({ block: 'nearest' }); return; }
+  var w = wrap.getBoundingClientRect(), r = el.getBoundingClientRect();
+  var elTop = r.top - w.top + wrap.scrollTop, elBottom = r.bottom - w.top + wrap.scrollTop;
+  // Positions dans le contenu (indépendantes du défilement) ; animation en cours : on raisonne depuis sa cible
+  var base = wrap.scrollTarget != null ? wrap.scrollTarget : wrap.scrollTop;
+  var target = scrollTargetFor(elTop, elBottom, base, wrap.clientHeight, SCROLL_MARGIN_PX);
+  if (target != null) animateScroll(wrap, target);
+}
+
 // RETOUR dans une liste défilée (vignettes, médias, épisodes) : remonte tout en haut et sélectionne le premier élément.
+// Courte distance : défilement animé ; longue distance : fondu enchaîné (plutôt que de faire défiler des dizaines d'affiches).
 // Renvoie false si la liste est déjà en haut : RETOUR fait alors son action habituelle (quitter, écran précédent).
 var SCROLL_TOP_THRESHOLD_PX = 10;
+var SCROLL_TOP_FADE_MS = 200;
 function scrollListToTop() {
   var wrap = document.querySelector('.screen.active .grid-wrap, .screen.active .list-wrap');
   if (!wrap || wrap.scrollTop < SCROLL_TOP_THRESHOLD_PX) return false;
   var first = wrap.querySelector('[data-f]');
-  if (first) first.focus({ preventScroll: true });
-  wrap.scrollTo({ top: 0, behavior: 'smooth' });
+  if (wrap.scrollTop <= wrap.clientHeight * 1.5) {
+    if (first) first.focus({ preventScroll: true });
+    animateScroll(wrap, 0, 480);
+    return true;
+  }
+  wrap.classList.add('fade-out');
+  setTimeout(function () {
+    cancelAnimationFrame(wrap.scrollAnim);
+    wrap.scrollTarget = null;
+    wrap.scrollTop = 0;
+    if (first) first.focus({ preventScroll: true });
+    wrap.classList.remove('fade-out');
+  }, SCROLL_TOP_FADE_MS);
   return true;
 }
 
