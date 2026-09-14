@@ -152,3 +152,101 @@ html.playing, html.playing body { background: transparent; }
 #skip-intro.show { display: block; }
 #skip-intro:focus { border-color: var(--accent); background: rgba(238, 243, 251, .94); color: #0a0f1c; transform: scale(1.06); }
 #osd:not(.hidden) ~ #skip-intro { bottom: 300px; }
+
+/* ================================================================================================
+   Style « liquid glass » : surfaces translucides, reflet en haut, liseré clair, flou d'arrière-plan.
+   Le flou (coûteux sur TV) est réservé aux éléments peu nombreux : boutons, menus, fenêtres, bulles.
+   Pendant la lecture, la vidéo est sur un plan matériel sous la page : le verre y est teinté, sans flou réel.
+   ================================================================================================ */
+:root {
+  --glass: linear-gradient(180deg, rgba(255, 255, 255, .17) 0%, rgba(255, 255, 255, .05) 46%, rgba(255, 255, 255, .02) 54%, rgba(255, 255, 255, .08) 100%);
+  --glass-focus: linear-gradient(180deg, rgba(255, 255, 255, .42) 0%, rgba(255, 255, 255, .16) 46%, rgba(255, 255, 255, .10) 54%, rgba(255, 255, 255, .22) 100%);
+  --glass-tint: rgba(22, 32, 58, .38);
+  --glass-edge: rgba(255, 255, 255, .2);
+  --glass-edge-focus: rgba(255, 255, 255, .8);
+  --glass-inner: inset 0 1px 1px rgba(255, 255, 255, .45), inset 0 -1px 1px rgba(255, 255, 255, .08);
+  --glass-drop: 0 10px 28px rgba(0, 0, 0, .35);
+  --glass-glow: 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(59, 130, 246, .5);
+  --glass-blur: blur(24px) saturate(170%);
+}
+
+/* Fond d'ambiance : des halos colorés pour que le verre ait quelque chose à réfracter */
+html, body {
+  background:
+    radial-gradient(1200px 760px at 8% -12%, rgba(59, 130, 246, .30), transparent 62%),
+    radial-gradient(1000px 760px at 102% 112%, rgba(139, 92, 246, .24), transparent 62%),
+    radial-gradient(760px 520px at 62% 42%, rgba(20, 184, 166, .10), transparent 70%),
+    #060913;
+}
+
+/* --- Surfaces de verre --- */
+.btn, .search-box, #query, .item, .tm-item, .ctl, #skip-intro, .release, .modal-box, .track-menu, #toast, #osd-state, #seek-label, .ctl::after {
+  background: var(--glass), var(--glass-tint);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-inner), var(--glass-drop);
+}
+.btn, .search-box, #query, .ctl, #skip-intro, .release, .modal-box, .track-menu, #toast, #osd-state, #seek-label, .ctl::after {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.btn, .search-box, .item, .tm-item, .ctl, #skip-intro { transition: transform .12s, background .15s, box-shadow .15s, border-color .15s; }
+
+/* Liserés fins (padding compensé pour garder les mêmes dimensions) */
+.btn { border-width: 2px; padding: 18px 36px; }
+.search-box, #query { border-width: 2px; padding: 18px 30px; border-radius: 22px; }
+.item { border-width: 2px; padding: 18px 28px; border-radius: 20px; }
+.tm-item { border-width: 2px; padding: 16px 22px; background: transparent; box-shadow: none; }
+.ctl { border-width: 2px; }
+#skip-intro { border-width: 2px; padding: 22px 42px; border-radius: 20px; }
+.release { border: 1.5px solid var(--glass-edge); border-radius: 22px; }
+.modal-box { border: 1.5px solid var(--glass-edge); border-radius: 34px; background: var(--glass), rgba(16, 24, 46, .55); }
+.track-menu { border: 1.5px solid var(--glass-edge); border-radius: 28px; background: var(--glass), rgba(10, 15, 28, .55); }
+#toast { border: 1.5px solid var(--glass-edge); border-radius: 24px; background: var(--glass), rgba(12, 18, 34, .6); }
+#toast.ko { border-color: rgba(248, 113, 113, .85); }
+#osd-state { border: 1.5px solid var(--glass-edge); border-radius: 26px; background: var(--glass), rgba(0, 0, 0, .35); }
+#seek-label, .ctl::after { border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(10, 15, 28, .55); }
+
+/* --- Sélection : verre éclairé, liseré blanc, halo bleu --- */
+.btn:focus, .search-box:focus, .item:focus, .tm-item:focus, .ctl:focus, #skip-intro:focus {
+  background: var(--glass-focus), rgba(59, 130, 246, .38);
+  border-color: var(--glass-edge-focus);
+  box-shadow: var(--glass-inner), var(--glass-glow);
+  color: #fff;
+}
+#query { border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); }
+.btn.primary { background: var(--glass), rgba(59, 130, 246, .6); }
+.btn.primary:focus { background: var(--glass-focus), rgba(59, 130, 246, .85); }
+.tab.selected { background: var(--glass), rgba(59, 130, 246, .3); box-shadow: var(--glass-inner), inset 0 -4px 0 rgba(147, 197, 253, .9), var(--glass-drop); }
+.modal-buttons .btn.danger { background: var(--glass), rgba(220, 38, 38, .38); }
+.modal-buttons .btn.danger:focus { background: var(--glass-focus), rgba(220, 38, 38, .75); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
+
+/* Vignettes : liseré blanc, halo et reflet sur l'affiche sélectionnée (sans flou : elles sont nombreuses) */
+.card:focus { border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 1px rgba(255, 255, 255, .3), 0 20px 54px rgba(59, 130, 246, .5); }
+.poster { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.card:focus .poster::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .3) 0%, rgba(255, 255, 255, .06) 38%, rgba(255, 255, 255, 0) 60%); pointer-events: none; }
+.d-poster { border: 1px solid rgba(255, 255, 255, .14); }
+
+/* Pastilles et badges : verre fin, sans flou */
+.poster .q, .badge, .seen {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .04)), rgba(10, 15, 28, .55);
+  border: 1px solid rgba(255, 255, 255, .2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+.badge.ok, .seen { background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03)), rgba(16, 120, 80, .38); border-color: rgba(52, 211, 153, .4); }
+.badge.warn { background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03)), rgba(160, 110, 10, .38); border-color: rgba(251, 191, 36, .4); }
+.seen.started { background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03)), rgba(59, 130, 246, .34); border-color: rgba(147, 197, 253, .45); }
+.item .icon.seen { background: none; border: 0; box-shadow: none; }
+
+/* Barres : rainure creusée, remplissage lumineux */
+.progress, .poster .dl-bar, .poster .resume-bar, #seekbar { background: rgba(255, 255, 255, .14); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .45); }
+.progress > div, .poster .dl-bar > div { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+.progress.active > div, .poster .dl-bar.active > div, .poster .resume-bar > div, #seekbar > #osd-bar { background: linear-gradient(90deg, #3b82f6, #93c5fd); box-shadow: 0 0 12px rgba(96, 165, 250, .6); }
+#seekbar:focus { border-color: rgba(255, 255, 255, .8); }
+#seek-cursor { background: radial-gradient(circle at 35% 30%, #fff 0%, #e0ecff 60%, #bcd4ff 100%); box-shadow: 0 0 0 6px rgba(255, 255, 255, .2), 0 4px 16px rgba(0, 0, 0, .5); }
+
+/* Fenêtre modale : fond flouté et assombri */
+#modal { background: rgba(4, 7, 15, .45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* « Épisode suivant » : verre clair, lisible sur la vidéo */
+#next-episode { background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(226, 232, 240, .88)); border-width: 2px; padding: 22px 42px; border-radius: 20px; box-shadow: inset 0 1px 1px #fff, 0 12px 32px rgba(0, 0, 0, .45); }
+#next-episode:focus { border-color: rgba(59, 130, 246, .9); box-shadow: inset 0 1px 1px #fff, 0 0 0 1px rgba(255, 255, 255, .5), 0 16px 44px rgba(59, 130, 246, .55); }
