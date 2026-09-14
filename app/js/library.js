@@ -10,8 +10,46 @@ var SORTS = {
   old: function (a, b) { return mediaDate(a) - mediaDate(b); },
   az: function (a, b) { return label(a.name).localeCompare(label(b.name), 'fr', { numeric: true }); },
   za: function (a, b) { return label(b.name).localeCompare(label(a.name), 'fr', { numeric: true }); },
-  size: function (a, b) { return b.size - a.size; }
+  size: function (a, b) { return b.size - a.size; },
+  sizeAsc: function (a, b) { return a.size - b.size; }
 };
+
+// Tris regroupés par paire, chacun dans une liste déroulante : le bouton affiche le dernier choix du groupe
+// et est mis en évidence quand c'est le tri actif. short = libellé du bouton, label = libellé dans la liste.
+var SORT_GROUPS = {
+  date: { title: 'Date d\'ajout', options: [{ value: 'recent', short: 'Récents', label: 'Plus récents en premier' }, { value: 'old', short: 'Anciens', label: 'Plus anciens en premier' }] },
+  name: { title: 'Nom', options: [{ value: 'az', short: 'A → Z', label: 'De A à Z' }, { value: 'za', short: 'Z → A', label: 'De Z à A' }] },
+  size: { title: 'Taille', options: [{ value: 'size', short: 'Taille ↓', label: 'Plus gros en premier' }, { value: 'sizeAsc', short: 'Taille ↑', label: 'Plus petits en premier' }] }
+};
+state.dlSortChoice = { date: 'recent', name: 'az', size: 'size' };
+
+function sortGroupOf(sort) {
+  return Object.keys(SORT_GROUPS).filter(function (g) { return SORT_GROUPS[g].options.some(function (o) { return o.value === sort; }); })[0];
+}
+
+function renderSortButtons() {
+  Object.keys(SORT_GROUPS).forEach(function (g) {
+    var choice = state.dlSortChoice[g];
+    var option = SORT_GROUPS[g].options.filter(function (o) { return o.value === choice; })[0];
+    var btn = $('dl-sort-' + g);
+    btn.innerHTML = esc(option.short) + '<span class="caret">▾</span>';
+    btn.classList.toggle('selected', sortGroupOf(state.dlSort) === g);
+  });
+}
+
+function pickMediaSort(group) {
+  // Coche seulement si ce groupe est le tri en cours (sinon la sélection se place sur la première option)
+  var active = sortGroupOf(state.dlSort) === group ? state.dlSort : null;
+  openPicker($('dl-sort-' + group), SORT_GROUPS[group].title, SORT_GROUPS[group].options, active, function (it) {
+    state.dlSort = it.value;
+    state.dlSortChoice[group] = it.value;
+    renderSortButtons();
+    renderDownloads();
+    $('downloads-list').parentNode.scrollTop = 0;
+  });
+}
+
+renderSortButtons();
 
 // Vignette d'un média : affiche, nombre de vidéos, badge « vu », progression d'un téléchargement en cours
 function mediaCardHtml(m, posterCache, nowMs) {

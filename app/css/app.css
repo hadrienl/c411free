@@ -303,6 +303,8 @@ html.playing #ambient { display: none; }
 .btn.select { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 340px; }
 .btn.select .caret { opacity: .7; }
 .btn.reset { margin-left: auto; }
+/* Tris des Médias : listes déroulantes compactes dans l'en-tête */
+#dl-sorts .btn.select { min-width: 0; gap: 16px; }
 
 /* Liste déroulante en verre (années, genres) */
 #picker { position: absolute; z-index: 22; display: none; width: 520px; max-height: 660px; overflow-y: auto; scrollbar-width: none; padding: 16px; border-radius: 28px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(10, 15, 28, .62); box-shadow: var(--glass-inner), 0 26px 64px rgba(0, 0, 0, .55); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }

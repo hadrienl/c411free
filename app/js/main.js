@@ -12,12 +12,8 @@ $('filter-year').addEventListener('click', pickYear);
 $('filter-genre').addEventListener('click', pickGenre);
 $('filter-reset').addEventListener('click', resetFilters);
 $('dl-sorts').addEventListener('click', function (e) {
-  var tab = e.target.closest('[data-sort]');
-  if (!tab) return;
-  state.dlSort = tab.getAttribute('data-sort');
-  document.querySelectorAll('[data-sort]').forEach(function (x) { x.classList.toggle('selected', x === tab); });
-  renderDownloads();
-  $('downloads-list').parentNode.scrollTop = 0;
+  var btn = e.target.closest('[data-sort-group]');
+  if (btn) pickMediaSort(btn.getAttribute('data-sort-group'));
 });
 $('downloads-list').addEventListener('click', function (e) {
   var more = e.target.closest('[data-more-id]');
