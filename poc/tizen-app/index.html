@@ -118,7 +118,7 @@
       <span class="search-box" data-f tabindex="-1" id="search-box">🔎 <span id="search-label">Rechercher un film, une série…</span></span>
       <input id="query" type="text" placeholder="Titre du film ou de la série…" autocomplete="off">
     </div>
-    <span class="btn" data-f tabindex="-1" id="open-downloads">📥 Téléchargements</span>
+    <span class="btn" data-f tabindex="-1" id="open-downloads">🎬 Médias</span>
   </header>
   <nav class="tabs" id="tabs">
     <span class="btn tab selected" data-f tabindex="-1" data-subcat="">Tout</span>
@@ -159,17 +159,18 @@
 
 <section id="downloads" class="screen">
   <header class="top">
-    <div class="brand">Téléchargements <small id="dl-count"></small></div>
+    <div class="brand">Médias <small id="dl-count"></small></div>
     <nav class="tabs" id="dl-sorts">
       <span class="btn tab selected" data-f tabindex="-1" data-sort="recent">Récents</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="old">Anciens</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="az">A → Z</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="za">Z → A</span>
       <span class="btn tab" data-f tabindex="-1" data-sort="size">Taille</span>
+      <span class="btn" data-f tabindex="-1" id="dl-rescan">🔄 Actualiser</span>
     </nav>
   </header>
   <div class="list-wrap"><div id="downloads-list"></div></div>
-  <p class="hint">OK sur un téléchargement terminé pour le regarder · mise à jour automatique · RETOUR accueil</p>
+  <p class="hint">OK pour regarder · 📁 = dossier d'épisodes · barre = téléchargement en cours · RETOUR accueil</p>
 </section>
 
 <section id="files" class="screen">
@@ -220,6 +221,7 @@
 
 <script src="$WEBAPIS/webapis/webapis.js"></script>
 <script src="secrets.js"></script>
+<script src="media.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
