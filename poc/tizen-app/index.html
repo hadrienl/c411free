@@ -203,6 +203,13 @@
     </div>
   </div>
   <div id="subs"></div>
+  <style>
+    #next-episode { position: absolute; right: 90px; bottom: 90px; display: none; font-size: 34px; font-weight: 600; padding: 20px 40px; border-radius: 16px; background: rgba(238, 243, 251, .94); color: #0a0f1c; border: 4px solid transparent; z-index: 6; transition: bottom .25s, transform .12s; }
+    #next-episode.show { display: block; }
+    #next-episode:focus { border-color: var(--accent); transform: scale(1.06); }
+    #osd:not(.hidden) ~ #next-episode { bottom: 300px; }
+  </style>
+  <span id="next-episode" data-f tabindex="-1">Lire l'épisode suivant ›</span>
   <div class="track-menu" id="track-menu">
     <div class="tm-title" id="tm-title"></div>
     <div id="tm-list"></div>

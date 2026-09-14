@@ -60,7 +60,7 @@ function show(screen, focusEl) {
 
 function focusables() {
   var scope = '.screen.active [data-f]';
-  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar';
+  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
 }
 
@@ -575,6 +575,11 @@ function updateOsd() {
       persistPosition(cur, dur);
       player.positionSavedAt = Date.now();
     }
+    // Épisode suivant : bouton proposé au début du générique
+    if (!player.nextShown && !player.nextDismissed && player.resumeReady && avState() === 'PLAYING' && dur) {
+      var creditsAt = player.creditsAt != null ? player.creditsAt : creditsStart(null, dur);
+      if (cur >= creditsAt && nextFile()) showNextEpisode();
+    }
   } catch (e) { /* lecteur pas prêt */ }
 }
 
@@ -608,6 +613,73 @@ function persistPosition(cur, dur) {
     }
   }
   storePositions(all);
+}
+
+// ---------- Épisode suivant (comme Netflix) ----------
+// Fichier suivant du même dossier, dans l'ordre alphanumérique de la liste des vidéos
+function nextFile() {
+  var ft = state.filesTask;
+  if (!ft || !player.file || !player.task || taskKey(ft.task) !== taskKey(player.task)) return null;
+  var i = ft.files.map(function (f) { return f.name; }).indexOf(player.file.name);
+  return i >= 0 && i + 1 < ft.files.length ? ft.files[i + 1] : null;
+}
+
+// « 43 min 43 s », « 1 h 2 min », « 22 min 50 s 120 ms » → millisecondes
+function mediaDuration(text) {
+  var ms = 0, m, re = /(\d+)\s*(h|min|ms|s)\b/g;
+  var unit = { h: 3600000, min: 60000, ms: 1, s: 1000 };
+  while ((m = re.exec(String(text || '')))) ms += Number(m[1]) * unit[m[2]];
+  return ms;
+}
+
+// Début du générique de fin : chapitre du MediaInfo c411 s'il décrit bien ce fichier (même durée à 3 s près),
+// sinon les dernières secondes de l'épisode (3 % de la durée, entre 40 s et 2 min)
+var CREDITS_NAME = /credit|g[ée]n[ée]rique|ending|outro|\bend\b|\bfin\b/i;
+function creditsStart(nfo, dur) {
+  if (!dur) return null;
+  var fallback = dur - Math.max(40000, Math.min(120000, dur * 0.03));
+  var blocks = String(nfo || '').split(/\n\s*\n/);
+  var general = blocks.filter(function (b) { return /^\s*General\b/i.test(b); })[0] || '';
+  var nfoDur = mediaDuration((general.match(/^Duration\s*:\s*(.+)$/mi) || [])[1]);
+  var menu = blocks.filter(function (b) { return /^\s*Menu\b/i.test(b); })[0];
+  if (!menu || !nfoDur || Math.abs(nfoDur - dur) > 3000) return fallback;
+  var chapters = menu.split('\n').map(function (line) {
+    var m = line.match(/^\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*:\s*(.*)$/);
+    return m ? { at: ((Number(m[1]) * 60 + Number(m[2])) * 60 + Number(m[3])) * 1000 + Number(m[4]), name: m[5] } : null;
+  }).filter(Boolean);
+  var named = chapters.filter(function (c) { return CREDITS_NAME.test(c.name) && c.at > dur * 0.5; }).pop();
+  if (named) return named.at;
+  var last = chapters[chapters.length - 1];
+  if (last && last.at >= dur * 0.85 && dur - last.at <= 180000) return last.at;
+  return fallback;
+}
+
+function showNextEpisode() {
+  player.nextShown = true;
+  $('next-episode').classList.add('show');
+  if (!menuOpen()) $('next-episode').focus();
+  debug('info', 'épisode suivant proposé', { position: webapis.avplay.getCurrentTime(), generique: player.creditsAt });
+}
+
+function hideNextEpisode() { $('next-episode').classList.remove('show'); }
+
+function dismissNextEpisode() {
+  player.nextDismissed = true;
+  hideNextEpisode();
+  $('ctl-play').focus();
+  showOsd(false);
+}
+
+function playNextEpisode() {
+  var next = nextFile(), task = player.task;
+  if (!next) { hideNextEpisode(); return; }
+  // L'épisode en cours est considéré comme terminé : vu, et sans position de reprise
+  markWatched(task, player.file.name);
+  clearPosition(task, player.file);
+  player.resumeReady = false;
+  hideNextEpisode();
+  stopPlayback();
+  play(next, 'files', task);
 }
 
 // Curseur de la barre de lecture : position réelle, ou position visée pendant un déplacement
@@ -886,6 +958,12 @@ function playerKey(e) {
     else if (code === KEY.BACK || code === KEY.LEFT || code === KEY.RIGHT) closeMenu();
     return;
   }
+  // Bouton « Lire l'épisode suivant » sélectionné : OK lance, RETOUR écarte, ◀ ▲ reviennent aux contrôles
+  if (document.activeElement === $('next-episode') && $('next-episode').classList.contains('show')) {
+    if (code === KEY.ENTER) { playNextEpisode(); return; }
+    if (code === KEY.BACK) { dismissNextEpisode(); return; }
+    if (code === KEY.LEFT || code === KEY.UP) { showOsd(true); $('ctl-play').focus(); return; }
+  }
   var osdHidden = $('osd').classList.contains('hidden');
   var onBar = !osdHidden && document.activeElement === $('seekbar');
   switch (code) {
@@ -926,13 +1004,17 @@ async function play(file, returnTo, task) {
   player.file = file;
   player.audio = []; player.text = []; player.currentAudio = null; player.currentText = 'default';
   player.info = { audio: [], text: [] };
+  player.nextShown = false;
+  player.nextDismissed = false;
+  player.creditsAt = null;
+  hideNextEpisode();
   toast('Préparation de la lecture…');
 
   // MediaInfo c411 (titres des pistes), en parallèle et sans bloquer la lecture
   var infoPromise = task && task.info_hash
     ? c411('/api/torrents/' + String(task.info_hash).toLowerCase()).then(function (d) {
       var nfo = d.metadata && d.metadata.nfoContent;
-      return { audio: mediaTracks(nfo, 'Audio'), text: mediaTracks(nfo, 'Text') };
+      return { audio: mediaTracks(nfo, 'Audio'), text: mediaTracks(nfo, 'Text'), nfo: nfo };
     }).catch(function () { return { audio: [], text: [] }; })
     : Promise.resolve({ audio: [], text: [] });
 
@@ -966,7 +1048,10 @@ async function play(file, returnTo, task) {
         player.resumeReady = false; // fichier terminé : pas de position à reprendre
         clearPosition(player.task, file);
         if (player.task) markWatched(player.task, file.name);
+        // Enchaînement automatique sur l'épisode suivant, sauf si la proposition a été écartée
+        var next = nextFile(), task = player.task;
         stopPlayback();
+        if (next && !player.nextDismissed) play(next, 'files', task);
       },
       onevent: function (type, data) { trace('event ' + type, { data: data }); },
       onerror: function (err) { trace('erreur ' + err); toast('Lecture impossible : ' + err, true); stopPlayback(); },
@@ -1022,6 +1107,8 @@ async function play(file, returnTo, task) {
         player.info = await Promise.race([infoPromise, new Promise(function (resolve) { setTimeout(function () { resolve({ audio: [], text: [] }); }, 2500); })]);
         describeTracks();
         applyPrefs();
+        player.creditsAt = creditsStart(player.info.nfo, av.getDuration());
+        trace('générique', { debut: player.creditsAt, mediainfo: !!player.info.nfo });
         renderTrackSummary();
         trace('pistes', { audio: player.audio.map(function (t) { return t.name; }), text: player.text.map(function (t) { return t.name; }) });
       } catch (e) {
@@ -1045,6 +1132,7 @@ function stopPlayback() {
     if (player.resumeReady && (st === 'PLAYING' || st === 'PAUSED')) persistPosition(webapis.avplay.getCurrentTime(), webapis.avplay.getDuration());
   } catch (e) { /* lecteur indisponible */ }
   player.resumeReady = false;
+  hideNextEpisode();
   try { webapis.avplay.stop(); } catch (e) { /* déjà arrêté */ }
   try { webapis.avplay.close(); } catch (e) { /* déjà fermé */ }
   clearInterval(player.tick);
