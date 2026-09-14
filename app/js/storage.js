@@ -4,6 +4,27 @@ var PREFS_KEY = 'c411free.trackPrefs';
 var WATCHED_KEY = 'c411free.watched';
 var WATCHED_RATIO = 0.25; // un fichier est « vu » au-delà de 25 % de sa durée
 var MEDIA_VIEW_KEY = 'c411free.mediaView';
+var INTRO_SKIPS_KEY = 'c411free.introSkips';
+var INTRO_SKIPS_MAX = 100;
+
+// ---------- Génériques de début appris par série ----------
+// { "<série normalisée>": { start: ms, end: ms, at: horodatage } }
+function loadIntroSkips() { try { return JSON.parse(localStorage.getItem(INTRO_SKIPS_KEY)) || {}; } catch (e) { return {}; } }
+
+function saveIntroSkip(key, skip) {
+  var all = loadIntroSkips();
+  all[key] = { start: Math.round(skip.start), end: Math.round(skip.end), at: Date.now() };
+  var keys = Object.keys(all);
+  if (keys.length > INTRO_SKIPS_MAX) {
+    keys.sort(function (a, b) { return all[a].at - all[b].at; }).slice(0, keys.length - INTRO_SKIPS_MAX).forEach(function (k) { delete all[k]; });
+  }
+  try { localStorage.setItem(INTRO_SKIPS_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ }
+}
+
+function learnedIntro(key) {
+  var s = key && loadIntroSkips()[key];
+  return s ? { start: s.start, end: s.end, source: 'appris' } : null;
+}
 
 // ---------- Vue des Médias : vignettes (par défaut) ou liste ----------
 function loadMediaView() { try { return localStorage.getItem(MEDIA_VIEW_KEY) === 'list' ? 'list' : 'grid'; } catch (e) { return 'grid'; } }

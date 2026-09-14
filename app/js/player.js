@@ -51,6 +51,9 @@ function updateOsd() {
       var creditsAt = player.creditsAt != null ? player.creditsAt : creditsStart(null, dur);
       if (cur >= creditsAt && nextFile()) showNextEpisode();
     }
+    updateSkipIntro(cur);
+    var learned = learnedSkip(player.skipPending, Date.now());
+    if (learned) { player.skipPending = null; rememberIntro(learned); }
   } catch (e) { /* lecteur pas prêt */ }
 }
 
@@ -64,6 +67,7 @@ function nextFile() {
 }
 
 function showNextEpisode() {
+  hideSkipIntro();
   player.nextShown = true;
   $('next-episode').classList.add('show');
   if (!menuOpen()) $('next-episode').focus();
@@ -71,6 +75,77 @@ function showNextEpisode() {
 }
 
 function hideNextEpisode() { $('next-episode').classList.remove('show'); }
+
+// ---------- Générique de début : bouton « Passer le générique » ----------
+// Source : chapitres du fichier (OP, Intro…), sinon le saut que l'utilisateur a fait sur un autre épisode de la même série.
+function currentSeriesKey() {
+  var ft = state.filesTask;
+  return player.file ? seriesKey(player.file.name, player.returnTo === 'files' && ft ? ft.task.name : '') : null;
+}
+
+function updateSkipIntro(cur) {
+  var w = introWindow(player.intro), btn = $('skip-intro');
+  var inside = !!w && !player.introDismissed && player.resumeReady && player.scrub == null
+    && cur >= w.from && cur < w.to && !$('next-episode').classList.contains('show');
+  if (inside && !btn.classList.contains('show')) {
+    btn.classList.add('show');
+    if (!menuOpen()) btn.focus();
+    debug('info', 'générique de début proposé', { source: player.intro.source, debut: player.intro.start, fin: player.intro.end });
+  } else if (!inside && btn.classList.contains('show')) {
+    hideSkipIntro();
+  }
+}
+
+function hideSkipIntro() {
+  var btn = $('skip-intro'), hadFocus = document.activeElement === btn;
+  btn.classList.remove('show');
+  if (hadFocus && state.screen === 'player') $('ctl-play').focus();
+}
+
+function skipIntro() {
+  var intro = player.intro;
+  player.introDismissed = true;
+  hideSkipIntro();
+  if (!intro) return;
+  try {
+    webapis.avplay.seekTo(Math.floor(intro.end), function () { updateOsd(); }, function () {});
+    osdState('⏩ Générique passé', 1200);
+  } catch (e) { /* hors limites */ }
+}
+
+function dismissSkipIntro() {
+  player.introDismissed = true;
+  hideSkipIntro();
+  showOsd(false);
+}
+
+// Saut manuel vers l'avant : suivi pour apprendre le générique de la série
+function noteSeek(fromMs, toMs) {
+  player.skipPending = trackSkip(player.skipPending, fromMs, toMs, Date.now());
+}
+
+function rememberIntro(skip) {
+  if (player.intro && player.intro.source === 'chapitres') return; // le fichier fait déjà foi
+  var key = currentSeriesKey();
+  if (!key) return;
+  saveIntroSkip(key, skip);
+  debug('info', 'générique de début appris', { debut: skip.start, fin: skip.end });
+}
+
+// Lecture d'une plage d'octets du fichier (serveur UPnP). Refuse une réponse complète : ce serait tout le fichier.
+function fetchRange(url, start, length) {
+  return fetch(url, { headers: { Range: 'bytes=' + start + '-' + (start + length - 1) } }).then(function (res) {
+    if (res.status !== 206) {
+      try { if (res.body) res.body.cancel(); } catch (e) { /* ignore */ }
+      throw new Error('plage refusée (HTTP ' + res.status + ')');
+    }
+    return res.arrayBuffer();
+  }).then(function (buf) { return new Uint8Array(buf); });
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise(function (resolve, reject) { setTimeout(function () { reject(new Error('délai dépassé')); }, ms); })]);
+}
 
 function dismissNextEpisode() {
   player.nextDismissed = true;
@@ -241,7 +316,9 @@ function seek(seconds) {
   var av = webapis.avplay, st = avState();
   if (st !== 'PLAYING' && st !== 'PAUSED') return;
   try {
+    var from = av.getCurrentTime();
     if (seconds > 0) av.jumpForward(seconds * 1000); else av.jumpBackward(-seconds * 1000);
+    noteSeek(from, from + seconds * 1000);
     osdState(seconds > 0 ? '⏩ +' + seconds + ' s' : '⏪ ' + seconds + ' s', 1000);
   } catch (e) { /* hors limites */ }
   updateOsd();
@@ -285,6 +362,7 @@ function scrubCommit() {
   player.scrub = null;
   if (target == null) return false;
   try {
+    noteSeek(webapis.avplay.getCurrentTime(), target);
     webapis.avplay.seekTo(Math.floor(target), function () { updateOsd(); }, function (err) { toast('Déplacement impossible : ' + err, true); });
     osdState('⏩ ' + fmtTime(target), 1200);
   } catch (e) {
@@ -351,6 +429,12 @@ function playerKey(e) {
     if (code === KEY.BACK) { dismissNextEpisode(); return; }
     if (code === KEY.LEFT || code === KEY.UP) { showOsd(true); $('ctl-play').focus(); return; }
   }
+  // Bouton « Passer le générique » sélectionné : OK saute, RETOUR écarte, ◀ ▲ reviennent aux contrôles
+  if (document.activeElement === $('skip-intro') && $('skip-intro').classList.contains('show')) {
+    if (code === KEY.ENTER) { skipIntro(); return; }
+    if (code === KEY.BACK) { dismissSkipIntro(); return; }
+    if (code === KEY.LEFT || code === KEY.UP) { showOsd(true); $('ctl-play').focus(); return; }
+  }
   var osdHidden = $('osd').classList.contains('hidden');
   var onBar = !osdHidden && document.activeElement === $('seekbar');
   switch (code) {
@@ -400,7 +484,11 @@ async function play(file, returnTo, task) {
   player.nextShown = false;
   player.nextDismissed = false;
   player.creditsAt = null;
+  player.intro = null;
+  player.introDismissed = false;
+  player.skipPending = null;
   hideNextEpisode();
+  hideSkipIntro();
   toast('Préparation de la lecture…');
 
   // MediaInfo c411 (titres des pistes), en parallèle et sans bloquer la lecture
@@ -413,6 +501,10 @@ async function play(file, returnTo, task) {
 
   try {
     var url = await upnpUrl(file.filepath);
+    // Chapitres du fichier (générique de début et de fin), lus en parallèle du démarrage
+    var chaptersPromise = /\.mkv$/i.test(file.name)
+      ? withTimeout(readMkvChapters(url, fetchRange), 5000).catch(function (e) { debug('info', 'chapitres illisibles', { erreur: e.message }); return []; })
+      : Promise.resolve([]);
 
     document.documentElement.classList.add('playing');
     $('osd-title').textContent = label(file.name);
@@ -501,6 +593,14 @@ async function play(file, returnTo, task) {
         describeTracks();
         applyPrefs();
         player.creditsAt = creditsStart(player.info.nfo, av.getDuration());
+        chaptersPromise.then(function (chapters) {
+          if (player.file !== file) return;
+          var dur = av.getDuration();
+          player.intro = introFromChapters(chapters, dur) || learnedIntro(currentSeriesKey());
+          var credits = creditsFromChapters(chapters, dur);
+          if (credits != null) player.creditsAt = credits;
+          trace('chapitres', { nombre: chapters.length, noms: chapters.map(function (c) { return c.name; }).slice(0, 8), debut: player.intro, fin: player.creditsAt });
+        });
         trace('générique', { debut: player.creditsAt, mediainfo: !!player.info.nfo });
         renderTrackSummary();
         trace('pistes', { audio: player.audio.map(function (t) { return t.name; }), text: player.text.map(function (t) { return t.name; }) });
@@ -524,8 +624,13 @@ function stopPlayback() {
     var st = avState();
     if (player.resumeReady && (st === 'PLAYING' || st === 'PAUSED')) persistPosition(webapis.avplay.getCurrentTime(), webapis.avplay.getDuration());
   } catch (e) { /* lecteur indisponible */ }
+  // Saut en cours au moment de quitter : considéré comme terminé
+  var learned = player.skipPending && learnedSkip(player.skipPending, player.skipPending.lastAt + SKIP_SETTLE_MS);
+  if (learned) rememberIntro(learned);
+  player.skipPending = null;
   player.resumeReady = false;
   hideNextEpisode();
+  hideSkipIntro();
   stopScrubHold();
   try { webapis.avplay.stop(); } catch (e) { /* déjà arrêté */ }
   try { webapis.avplay.close(); } catch (e) { /* déjà fermé */ }

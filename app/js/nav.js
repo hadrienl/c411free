@@ -13,7 +13,7 @@ function show(screen, focusEl) {
 
 function focusables() {
   var scope = modalOpen() ? '#modal [data-f]' : '.screen.active [data-f]';
-  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show';
+  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show, #skip-intro.show';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
 }
 
