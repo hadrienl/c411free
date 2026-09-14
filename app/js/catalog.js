@@ -70,30 +70,64 @@ function cardHtml(prefix, t) {
     + '</div>';
 }
 
+// Vignettes d'une page : remplace la grille (nouvelle liste) ou s'ajoute à la fin (page suivante)
 function renderGrid(gridId, prefix, bucket, append) {
   var grid = $(gridId);
-  var oldMore = grid.querySelector('.more');
-  if (oldMore) oldMore.remove();
   var start = append ? bucket.items.length - bucket.lastBatch : 0;
   var html = bucket.items.slice(start).map(function (t) { return cardHtml(prefix, t); }).join('');
-  if (bucket.items.length < bucket.total) {
-    html += '<div class="card more" data-f tabindex="-1" id="' + prefix + 'more" data-more="1"><div class="poster">➕</div><div class="cap">Voir plus</div><div class="sub">' + bucket.items.length + ' / ' + bucket.total + '</div></div>';
-  }
   if (append) grid.insertAdjacentHTML('beforeend', html); else grid.innerHTML = html || '<div class="empty">Aucun résultat.</div>';
   return start;
 }
 
-async function loadHome(reset) {
-  var b = state.home;
-  if (reset) { b.page = 0; b.items = []; }
+// ---------- Défilement infini ----------
+var GRID_COLUMNS = 7;
+var GRID_LOAD_MARGIN_PX = 300;
+
+function setGridLoading(gridId, on) {
+  var el = $(gridId).parentNode.querySelector('.grid-loading');
+  if (el) el.classList.toggle('on', on);
+}
+
+// Charge une page de c411 dans l'accueil ou les résultats. Une seule page à la fois ; une réponse arrivée après
+// une nouvelle recherche ou un changement de filtre (génération différente) est ignorée. Renvoie true si la grille a changé.
+async function loadPage(b, gridId, prefix, params, reset) {
+  if (reset) {
+    b.generation = (b.generation || 0) + 1;
+    b.page = 0; b.items = []; b.total = 0; b.done = false; b.loading = false;
+  } else if (b.loading || b.done) {
+    return false;
+  }
+  var generation = b.generation;
+  b.loading = true;
+  if (!reset) setGridLoading(gridId, true);
   try {
-    var j = await c411('/api/torrents', Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc', perPage: PER_PAGE, page: b.page + 1 }, filterParams(state.filters)));
+    var j = await c411('/api/torrents', Object.assign({ perPage: PER_PAGE, page: b.page + 1 }, params));
+    if (b.generation !== generation) return false;
     b.page += 1;
-    b.total = j.meta ? j.meta.total : j.data.length;
-    b.lastBatch = j.data.length;
-    b.items = b.items.concat(j.data);
-    var start = renderGrid('home-grid', 'h-', b, !reset);
-    if (!reset && b.items[start]) $('h-' + b.items[start].infoHash).focus();
+    var merged = mergePage(b.items, j.data, j.meta, b.page);
+    b.items = merged.items; b.lastBatch = merged.fresh; b.total = merged.total; b.done = merged.done;
+    renderGrid(gridId, prefix, b, !reset);
+    return true;
+  } finally {
+    if (b.generation === generation) { b.loading = false; setGridLoading(gridId, false); }
+  }
+}
+
+// Dernière rangée sélectionnée ou bas de la liste visible → page suivante
+function loadMoreIfNeeded(gridId) {
+  var grid = $(gridId), cards = grid.querySelectorAll('.card');
+  if (!cards.length || !grid.closest('.screen.active')) return;
+  var wrap = grid.parentNode;
+  var index = Array.prototype.indexOf.call(cards, document.activeElement);
+  var nearEnd = index >= cards.length - GRID_COLUMNS || wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - GRID_LOAD_MARGIN_PX;
+  if (!nearEnd) return;
+  if (gridId === 'home-grid') loadHome(false); else search(false);
+}
+
+async function loadHome(reset) {
+  try {
+    var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, filterParams(state.filters));
+    if (await loadPage(state.home, 'home-grid', 'h-', params, reset)) loadMoreIfNeeded('home-grid'); // page trop courte pour remplir l'écran
   } catch (e) {
     toast('Impossible de charger les nouveautés : ' + e.message, true);
   }
@@ -104,20 +138,16 @@ async function search(reset) {
   if (reset) {
     var q = $('query').value.trim();
     if (!q) { toast('Tapez un titre à rechercher'); return; }
-    b.q = q; b.page = 0; b.items = [];
+    b.q = q;
     toast('Recherche de « ' + q + ' »…');
   }
   try {
-    var j = await c411('/api/torrents', Object.assign({ name: b.q, category: 1, sortBy: 'relevance', perPage: PER_PAGE, page: b.page + 1 }, filterParams(state.filters)));
-    b.page += 1;
-    b.total = j.meta ? j.meta.total : j.data.length;
-    b.lastBatch = j.data.length;
-    b.items = b.items.concat(j.data);
+    var params = Object.assign({ name: b.q, category: 1, sortBy: 'relevance' }, filterParams(state.filters));
+    if (!await loadPage(b, 'results-grid', 'r-', params, reset)) return;
     var summary = filterSummary(state.filters);
     $('results-title').innerHTML = esc(b.total + ' résultat(s) pour « ' + b.q + ' »' + (summary ? ' · ' + summary : '')) + '<small>RETOUR nouvelle recherche</small>';
-    var start = renderGrid('results-grid', 'r-', b, !reset);
     if (reset) { state.lastFocus.results = null; show('results'); }
-    else if (b.items[start]) $('r-' + b.items[start].infoHash).focus();
+    loadMoreIfNeeded('results-grid');
   } catch (e) {
     toast('Recherche impossible : ' + e.message, true);
   }
@@ -186,9 +216,8 @@ async function openDetail(hash, from) {
 
 function onGridClick(from) {
   return function (e) {
-    var card = e.target.closest('[data-hash],[data-more]');
+    var card = e.target.closest('[data-hash]');
     if (!card) return;
-    if (card.hasAttribute('data-more')) { if (from === 'home') loadHome(false); else search(false); return; }
     openDetail(card.getAttribute('data-hash'), from);
   };
 }

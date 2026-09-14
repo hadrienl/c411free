@@ -31,6 +31,11 @@ $('files-list').addEventListener('click', function (e) {
 });
 $('search-box').addEventListener('click', openSearch);
 $('query').addEventListener('blur', function () { closeSearch(false); });
+// Défilement infini : sélection d'une vignette ou défilement de la liste
+['home-grid', 'results-grid'].forEach(function (id) {
+  $(id).addEventListener('focusin', function () { loadMoreIfNeeded(id); });
+  $(id).parentNode.addEventListener('scroll', function () { loadMoreIfNeeded(id); });
+});
 $('home-grid').addEventListener('click', onGridClick('home'));
 $('results-grid').addEventListener('click', onGridClick('results'));
 $('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
