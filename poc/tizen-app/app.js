@@ -81,6 +81,52 @@ function move(dir) {
   if (best) { best.focus(); best.scrollIntoView({ block: 'nearest' }); }
 }
 
+// Appui long sur OK dans les Médias : ouvre le menu de la ligne (appui court = action habituelle).
+// Mesuré sur la télécommande : OK ne se répète pas ; appui court → keyup vers 200 ms, appui maintenu → keyup forcé
+// à 1 000 ms. Sans keyup au bout de LONG_PRESS_MS, c'est un appui long ; la suite de l'appui est ignorée.
+var LONG_PRESS_MS = 500;
+var enterHold = null; // { el, row, start, repeated, done, timer }
+
+function enterHoldRow(el) {
+  return state.screen === 'downloads' && !modalOpen() && el && el.closest && el.closest('#downloads-list [data-id]');
+}
+
+function finishEnterHold(longPress) {
+  var h = enterHold;
+  if (!h || h.done) return;
+  h.done = true;
+  h.long = longPress;
+  clearTimeout(h.timer);
+  if (longPress) openMediaMenu(Number(h.row.getAttribute('data-id')));
+  else h.el.click();
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.keyCode !== KEY.ENTER) return;
+  if (enterHold && (!enterHold.done || (enterHold.long && Date.now() - enterHold.start < 1500))) {
+    // Répétition de l'appui en cours
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (!enterHold.done && Date.now() - enterHold.start >= LONG_PRESS_MS) finishEnterHold(true);
+    else enterHold.repeated = true;
+    return;
+  }
+  enterHold = null;
+  var row = enterHoldRow(document.activeElement);
+  if (!row) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  enterHold = { el: document.activeElement, row: row, start: Date.now(), repeated: false, done: false };
+  // Toujours pas relâché au bout du délai : appui long (la TV ne répète pas OK, elle envoie juste un keyup forcé à ~1 s)
+  enterHold.timer = setTimeout(function () { if (enterHold) finishEnterHold(true); }, LONG_PRESS_MS);
+}, true);
+
+document.addEventListener('keyup', function (e) {
+  if (e.keyCode !== KEY.ENTER || !enterHold) return;
+  var h = enterHold;
+  if (!h.done) finishEnterHold(Date.now() - h.start >= LONG_PRESS_MS);
+  // Après un appui long, on garde l'état un instant : des répétitions tardives ne doivent pas valider le menu
+  if (!h.long) enterHold = null;
+}, true);
+
 document.addEventListener('keydown', function (e) {
   var el = document.activeElement;
   // Fenêtre modale ouverte : navigation limitée à ses boutons, RETOUR la ferme
@@ -438,7 +484,6 @@ function isPlayable(t) { return t.rx_pct >= 10000 && (t.status === 'done' || t.s
 // Médias : vidéos des disques (films et dossiers d'épisodes), avec la progression des téléchargements associés
 function renderDownloads() {
   var focusedId = document.activeElement && document.activeElement.getAttribute('data-id');
-  var focusedMore = document.activeElement && document.activeElement.getAttribute('data-more-id');
   var media = state.media;
   var list = media.entries.map(function (m, i) { return { m: m, i: i }; })
     .sort(function (a, b) { return SORTS[state.dlSort](a.m, b.m); });
@@ -463,11 +508,10 @@ function renderDownloads() {
       + (t
         ? '<div class="progress' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div><span class="pct">' + pct.toFixed(0) + ' %</span>'
         : '<div class="progress" style="visibility:hidden"></div><span class="pct"></span>')
-      + '<span class="more-btn" data-f tabindex="-1" id="more-' + x.i + '" data-more-id="' + x.i + '">⋯</span>'
+      + '<span class="more-btn" data-more-id="' + x.i + '">⋯</span>'
       + '</div>';
   }).join('') || '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : 'Aucune vidéo trouvée.') + '</div>';
-  if (focusedMore && $('more-' + focusedMore)) $('more-' + focusedMore).focus();
-  else if (focusedId && $('dl-' + focusedId)) $('dl-' + focusedId).focus();
+  if (focusedId && $('dl-' + focusedId)) $('dl-' + focusedId).focus();
 }
 
 // Index des vidéos : cache immédiat, réanalyse des disques en arrière-plan (au plus toutes les 10 min,
@@ -1495,7 +1539,6 @@ $('d-back').addEventListener('click', function () { show(state.detailFrom); });
 try {
   ['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind'].forEach(function (k) { tizen.tvinputdevice.registerKey(k); });
 } catch (e) { /* hors TV */ }
-
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Secrets manquants : redéployez avec poc/deploy-tv.sh', true);
 loadHome(true).then(function () {
   var first = $('home-grid').querySelector('[data-f]');
