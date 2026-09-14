@@ -7,7 +7,7 @@ function cardHtml(prefix, t) {
     ? '<img src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onerror="this.remove()">'
     : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
-    + '<div class="poster"><div class="ph">' + esc(n.title) + '</div>' + img
+    + '<div class="poster"><div class="ph">🎬</div>' + img
     + (resolution(t.name) ? '<span class="q">' + resolution(t.name) + '</span>' : '')
     + (nameAudioOk(t.name) ? '' : '<span class="q warn">⚠️ son</span>') + '</div>'
     + '<div class="cap">' + esc(text) + '</div>'
