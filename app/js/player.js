@@ -511,6 +511,7 @@ async function play(file, returnTo, task) {
   player.nextShown = false;
   player.nextDismissed = false;
   player.creditsAt = null;
+  player.c411 = null; // titre et affiche de la release c411 (suivi des séries)
   player.intro = null;
   player.introDismissed = false;
   player.skipPending = null;
@@ -522,6 +523,8 @@ async function play(file, returnTo, task) {
   var infoPromise = task && task.info_hash
     ? c411('/api/torrents/' + String(task.info_hash).toLowerCase()).then(function (d) {
       var nfo = d.metadata && d.metadata.nfoContent;
+      var tmdb = (d.metadata && d.metadata.tmdbData) || {};
+      if (player.file === file) player.c411 = { name: normTitle(prettyName(d.name || '').title), poster: posterId(tmdb.posterUrl || d.posterUrl) };
       return { audio: mediaTracks(nfo, 'Audio'), text: mediaTracks(nfo, 'Text'), nfo: nfo };
     }).catch(function () { return { audio: [], text: [] }; })
     : Promise.resolve({ audio: [], text: [] });

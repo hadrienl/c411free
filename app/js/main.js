@@ -42,6 +42,7 @@ try {
   ['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind'].forEach(function (k) { tizen.tvinputdevice.registerKey(k); });
 } catch (e) { /* hors TV */ }
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redéployez avec tools/deploy-tv.sh', true);
+ensureSeriesBackfill(); // suivi des séries : reprise de l'historique des épisodes déjà vus
 renderFilters();
 loadHome(true).then(function () {
   var first = $('home-grid').querySelector('[data-f]');

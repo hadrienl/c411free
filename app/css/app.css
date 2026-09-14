@@ -308,6 +308,9 @@ html.playing #ambient { display: none; }
 /* Progression de l'analyse des disques : seconde ligne sous le titre, hors du flux (ne pousse pas les boutons) */
 #downloads .brand { position: relative; }
 .scan-status { position: absolute; left: 2px; top: 100%; margin-top: 2px; font-size: 22px; font-weight: 400; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
+/* Suivi des séries : onglet séparé des types, pastille des nouveautés */
+.tab.follow { margin-left: 18px; }
+.poster .q.fresh { background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .06)), rgba(59, 130, 246, .85); border-color: rgba(191, 219, 254, .7); color: #fff; font-weight: 600; }
 /* Tris des Médias : listes déroulantes compactes dans l'en-tête */
 #dl-sorts .btn.select { min-width: 0; gap: 16px; }
 

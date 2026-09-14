@@ -5,7 +5,7 @@ function prettyName(name) {
   var clean = String(name).replace(/\.(mkv|mp4|avi|m4v|ts)$/i, '').replace(/[._]/g, ' ');
   var episode = (clean.match(/\bS\d{1,2}(E\d{1,3})?\b/i) || [''])[0].toUpperCase();
   var m = clean.match(/^(.*?)\s*\(?\b(19\d{2}|20\d{2})\b\)?/);
-  var title = (m && m[1].trim()) || clean.split(/\b(S\d{1,2}|MULTI|VFF|VF2|VFQ|FRENCH|TRUEFRENCH|2160p|1080p|720p)\b/i)[0].trim() || clean;
+  var title = (m && m[1].trim()) || clean.split(/\b(S\d{1,2}(?:E\d{1,3})?|MULTI|VFF|VF2|VFQ|FRENCH|TRUEFRENCH|INTEGRALE|COMPLETE|2160p|1080p|720p)\b/i)[0].trim() || clean;
   return { title: title.replace(/\s+S\d{1,2}(E\d{1,3})?$/i, ''), year: m ? m[2] : '', episode: episode };
 }
 function label(name) { var n = prettyName(name); return n.title + (n.episode ? ' · ' + n.episode : ''); }

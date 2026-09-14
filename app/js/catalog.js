@@ -66,6 +66,7 @@ function cardHtml(prefix, t) {
     + '<div class="badges">'
     + (resolution(t.name) ? '<span class="q">' + resolution(t.name) + '</span>' : '')
     + (nameAudioOk(t.name) ? '' : '<span class="q warn">⚠️ son</span>')
+    + (prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash] ? '<span class="q right fresh">Nouveau</span>' : '')
     + '</div></div>'
     + '<div class="cap">' + esc(text) + '</div>'
     + '<div class="sub">' + esc([shortLang(t.language, t.name), gb(t.size), '▲ ' + (t.seeders || 0)].filter(Boolean).join(' · ')) + '</div>'
@@ -79,6 +80,72 @@ function renderGrid(gridId, prefix, bucket, append) {
   var html = bucket.items.slice(start).map(function (t) { return cardHtml(prefix, t); }).join('');
   if (append) grid.insertAdjacentHTML('beforeend', html); else grid.innerHTML = html || '<div class="empty">Aucun résultat.</div>';
   return start;
+}
+
+// ---------- Suivi des séries (onglet « Suivi » du tiroir des filtres) ----------
+var followGeneration = 0;
+state.follow = { list: [] };
+
+function freshLabel(n) { return n === 1 ? '1 nouveauté' : n + ' nouveautés'; }
+
+function followCardHtml(x, index) {
+  var s = x.series, n = x.summary.newCount;
+  var img = x.summary.posterUrl
+    ? '<img class="fade" src="' + esc(poster(x.summary.posterUrl, 'w342')) + '" onload="this.classList.add(\'on\')" onerror="this.remove()">'
+    : '';
+  var status = x.error ? 'recherche impossible' : n ? freshLabel(n) : 'à jour';
+  return '<div class="card" data-f tabindex="-1" id="s-' + index + '" data-series="' + index + '">'
+    + '<div class="poster"><div class="ph">📺</div>' + img
+    + '<div class="badges">' + (n ? '<span class="q right fresh">' + freshLabel(n) + '</span>' : '') + '</div></div>'
+    + '<div class="cap">' + esc(s.title) + '</div>'
+    + '<div class="sub">' + esc('Vu : ' + episodeCode(s) + ' · ' + status) + '</div>'
+    + '</div>';
+}
+
+// Séries regardées : nouveaux épisodes cherchés sur c411 (3 séries à la fois), vignettes par release la plus récente
+async function loadFollowed() {
+  var generation = ++followGeneration;
+  var home = state.home;
+  home.generation = (home.generation || 0) + 1; home.items = []; home.done = true; home.loading = false; // coupe le défilement infini
+  var all = loadSeries(), keys = Object.keys(all), grid = $('home-grid');
+  if (!keys.length) {
+    grid.innerHTML = '<div class="empty">Aucune série suivie pour l\'instant : regardez un épisode dans Médias, la série apparaîtra ici.</div>';
+    return;
+  }
+  grid.innerHTML = '<div class="empty">Recherche des nouveaux épisodes de ' + keys.length + ' série(s)…</div>';
+  var list = [];
+  for (var i = 0; i < keys.length; i += SERIES_SEARCH_CONCURRENCY) {
+    var batch = await Promise.all(keys.slice(i, i + SERIES_SEARCH_CONCURRENCY).map(function (k) {
+      return searchSeriesReleases(all[k])
+        .then(function (matched) { return { key: k, series: all[k], summary: seriesSummary(all[k], matched) }; })
+        .catch(function () { return { key: k, series: all[k], summary: seriesSummary(all[k], []), error: true }; });
+    }));
+    if (generation !== followGeneration || !isFollowMode(state.filters)) return;
+    list = list.concat(batch);
+  }
+  list.sort(function (a, b) { return b.summary.latestAt - a.summary.latestAt; });
+  state.follow.list = list;
+  grid.innerHTML = list.map(followCardHtml).join('');
+  debug('info', 'séries suivies', { series: list.length, avecNouveautes: list.filter(function (x) { return x.summary.newCount; }).length });
+}
+
+// Releases disponibles d'une série, nouveautés en premier (écran des résultats)
+function openSeries(index) {
+  var x = state.follow.list[index];
+  if (!x) return;
+  var b = state.results;
+  b.generation = (b.generation || 0) + 1; b.loading = false; b.done = true; b.q = '';
+  b.items = x.summary.releases.map(function (a) { return a.release; });
+  b.total = b.items.length; b.lastBatch = b.items.length;
+  b.newHashes = {};
+  x.summary.releases.forEach(function (a) { if (a.isNew) b.newHashes[a.release.infoHash] = true; });
+  var n = x.summary.newCount;
+  $('results-title').innerHTML = esc(x.series.title + ' · vu jusqu\'à ' + episodeCode(x.series) + ' · ' + (n ? freshLabel(n) : 'à jour'))
+    + '<small>RETOUR séries suivies</small>';
+  renderGrid('results-grid', 'r-', b, false);
+  if (!b.items.length) $('results-grid').innerHTML = '<div class="empty">Aucune release trouvée sur c411 pour cette série.</div>';
+  state.lastFocus.results = null;
+  show('results');
 }
 
 // ---------- Défilement infini ----------
@@ -127,6 +194,7 @@ function loadMoreIfNeeded(gridId) {
 }
 
 async function loadHome(reset) {
+  if (isFollowMode(state.filters)) { if (reset) loadFollowed(); return; } // onglet Suivi : séries suivies à la place des nouveautés
   try {
     var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, filterParams(state.filters));
     if (await loadPage(state.home, 'home-grid', 'h-', params, reset)) loadMoreIfNeeded('home-grid'); // page trop courte pour remplir l'écran
@@ -141,6 +209,7 @@ async function search(reset) {
     var q = $('query').value.trim();
     if (!q) { toast('Tapez un titre à rechercher'); return; }
     b.q = q;
+    b.newHashes = null;
     toast('Recherche de « ' + q + ' »…');
   }
   try {
@@ -218,6 +287,8 @@ async function openDetail(hash, from) {
 
 function onGridClick(from) {
   return function (e) {
+    var series = e.target.closest('[data-series]');
+    if (series) { openSeries(Number(series.getAttribute('data-series'))); return; }
     var card = e.target.closest('[data-hash]');
     if (!card) return;
     openDetail(card.getAttribute('data-hash'), from);

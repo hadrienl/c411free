@@ -52,6 +52,7 @@ function markWatched(task, fileName) {
   entry.files[fileName] = Date.now();
   all[key] = entry;
   saveWatched(all);
+  if (typeof noteSeriesProgress === 'function') noteSeriesProgress(task, fileName); // suivi des séries (series.js)
   debug('info', 'fichier marqué vu', { task: key, file: fileName });
 }
 
