@@ -303,6 +303,9 @@ html.playing #ambient { display: none; }
 .btn.select { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 340px; }
 .btn.select .caret { opacity: .7; }
 .btn.reset { margin-left: auto; }
+/* Progression de l'analyse des disques : seconde ligne sous le titre, hors du flux (ne pousse pas les boutons) */
+#downloads .brand { position: relative; }
+.scan-status { position: absolute; left: 2px; top: 100%; margin-top: 2px; font-size: 22px; font-weight: 400; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
 /* Tris des Médias : listes déroulantes compactes dans l'en-tête */
 #dl-sorts .btn.select { min-width: 0; gap: 16px; }
 

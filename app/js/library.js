@@ -134,7 +134,9 @@ function renderDownloads() {
   var media = state.media;
   var list = media.entries.map(function (m, i) { return { m: m, i: i }; })
     .sort(function (a, b) { return SORTS[state.dlSort](a.m, b.m); });
-  $('dl-count').textContent = media.entries.length + ' média(s)' + (media.scanning ? ' · analyse des disques… ' + media.progress : '');
+  $('dl-count').textContent = media.entries.length + ' média(s)';
+  // Progression de l'analyse sous le titre (position absolue : sa longueur variable ne décale pas les boutons)
+  $('dl-scan').textContent = media.scanning ? 'Analyse des disques… ' + media.progress : '';
   var grid = $('downloads-list'), asGrid = state.mediaView === 'grid';
   renderViewButton();
   grid.className = asGrid ? 'grid' : '';
@@ -199,7 +201,7 @@ async function scanMedia(force) {
       return fbx('/fs/ls/' + Media.utf8ToB64(path) + '?removeHidden=1').then(function (r) { return (r && r.entries) || []; });
     }, function (dirs, count) {
       media.progress = dirs + ' dossiers, ' + count + ' vidéos';
-      if (state.screen === 'downloads') $('dl-count').textContent = 'analyse des disques… ' + media.progress;
+      if (state.screen === 'downloads') $('dl-scan').textContent = 'Analyse des disques… ' + media.progress;
     });
     media.grouped = Media.group(videos);
     media.scannedAt = Date.now();
