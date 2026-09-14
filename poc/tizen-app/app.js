@@ -693,8 +693,7 @@ function renderSeekCursor(cur, dur) {
     bubble.textContent = fmtTime(cur);
   } else {
     var delta = Math.round((player.scrub - cur) / 1000);
-    bubble.textContent = fmtTime(player.scrub) + '  (' + (delta >= 0 ? '+' : '−') + fmtTime(Math.abs(delta) * 1000) + ')'
-      + (player.coasting ? '  · OK pour lire ici' : '');
+    bubble.textContent = fmtTime(player.scrub) + '  (' + (delta >= 0 ? '+' : '−') + fmtTime(Math.abs(delta) * 1000) + ')';
   }
 }
 
@@ -909,8 +908,7 @@ function scrubMove(direction) {
   player.scrubRun = quick ? (player.scrubRun || 0) + 1 : 0;
   player.scrubAt = now;
   var level = Math.min(Math.floor(player.scrubRun / 4), SCRUB_STEPS.length);
-  // Vitesse max : 2 % de la durée par pas (au moins 2 min), pour laisser le temps de valider pendant l'avance automatique
-  var step = level < SCRUB_STEPS.length ? SCRUB_STEPS[level] : Math.max(SCRUB_STEPS[SCRUB_STEPS.length - 1], dur * 0.02);
+  var step = level < SCRUB_STEPS.length ? SCRUB_STEPS[level] : Math.max(SCRUB_STEPS[SCRUB_STEPS.length - 1], dur * 0.05);
   player.scrub = Math.max(0, Math.min(dur - 1000, player.scrub + direction * step));
   renderSeekCursor(av.getCurrentTime(), dur);
 }
@@ -937,28 +935,15 @@ function scrubCancel() {
   return true;
 }
 
-// Touche maintenue : un minuteur fait avancer le curseur (les répétitions de keydown sont ignorées pour ne pas
-// doubler la vitesse). Mesuré sur la TV : après ~1 s d'appui (7 répétitions), elle envoie un keyup alors que la
-// touche est encore tenue, puis plus rien. Un keyup à ce moment-là laisse donc le curseur avancer tout seul
-// (« avance automatique ») jusqu'au prochain appui : OK saute, ◀/▶ inverse, ▼/RETOUR annule, autre touche fige.
+// Touche maintenue : la télécommande ne répète pas forcément keydown. Le curseur avance donc en continu
+// grâce à un minuteur jusqu'au relâchement (keyup) ; les répétitions éventuelles sont ignorées pour ne pas doubler la vitesse.
 var SCRUB_HOLD_DELAY = 300; // délai + 1er intervalle (420 ms) < fenêtre d'accélération de scrubMove (450 ms)
 var SCRUB_HOLD_TICK = 120;
-var SCRUB_CUTOFF_REPEATS = 6;
-var SCRUB_CUTOFF_MS = 900;
 
 function startScrubHold(direction) {
-  if (player.holdDir === direction) {
-    if (player.coasting) { player.coasting = false; player.holdStart = Date.now(); player.holdRepeats = 0; } // nouvel appui pendant l'avance automatique : on continue
-    else player.holdRepeats = (player.holdRepeats || 0) + 1;                                                  // répétition de la touche tenue
-    return;
-  }
+  if (player.holdDir === direction) return; // répétition d'une touche déjà maintenue
   stopScrubHold();
-  // Changement de sens : on repart à 10 s pour pouvoir revenir finement (appuis rapides dans le même sens : ça accélère)
-  if (player.lastScrubDir && player.lastScrubDir !== direction) player.scrubAt = 0;
-  player.lastScrubDir = direction;
   player.holdDir = direction;
-  player.holdStart = Date.now();
-  player.holdRepeats = 0;
   scrubMove(direction);
   player.holdTimer = setTimeout(function () {
     player.holdInterval = setInterval(function () {
@@ -975,21 +960,12 @@ function stopScrubHold() {
   player.holdTimer = null;
   player.holdInterval = null;
   player.holdDir = 0;
-  player.holdRepeats = 0;
-  player.coasting = false;
 }
 
 document.addEventListener('keyup', function (e) {
-  if (state.screen !== 'player' || (e.keyCode !== KEY.LEFT && e.keyCode !== KEY.RIGHT) || !player.holdDir) return;
-  var heldMs = Date.now() - (player.holdStart || 0);
-  var cutoff = player.holdRepeats >= SCRUB_CUTOFF_REPEATS || heldMs >= SCRUB_CUTOFF_MS;
-  debug('info', 'lecteur : touche relâchée', { key: e.keyCode, scrub: player.scrub, repetitions: player.holdRepeats, dureeMs: heldMs, avanceAuto: cutoff });
-  if (cutoff) {
-    player.coasting = true; // coupure de la TV pendant l'appui : le curseur continue jusqu'au prochain appui
-    showOsd(false);
-  } else {
-    stopScrubHold();        // vrai relâchement avant la coupure : le curseur s'arrête
-  }
+  if (state.screen !== 'player' || (e.keyCode !== KEY.LEFT && e.keyCode !== KEY.RIGHT)) return;
+  debug('info', 'lecteur : touche relâchée', { key: e.keyCode, scrub: player.scrub });
+  stopScrubHold();
 });
 window.addEventListener('blur', stopScrubHold);
 
@@ -1018,8 +994,6 @@ function playerKey(e) {
     else if (code === KEY.BACK || code === KEY.LEFT || code === KEY.RIGHT) closeMenu();
     return;
   }
-  // Avance automatique du curseur : toute autre touche que ◀ ▶ OK la fige (OK saute, RETOUR/▼ annulent plus bas)
-  if (player.holdDir && code !== KEY.LEFT && code !== KEY.RIGHT && code !== KEY.ENTER && code !== KEY.BACK && code !== KEY.DOWN) stopScrubHold();
   // Bouton « Lire l'épisode suivant » sélectionné : OK lance, RETOUR écarte, ◀ ▲ reviennent aux contrôles
   if (document.activeElement === $('next-episode') && $('next-episode').classList.contains('show')) {
     if (code === KEY.ENTER) { playNextEpisode(); return; }
