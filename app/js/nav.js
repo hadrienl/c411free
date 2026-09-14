@@ -25,16 +25,9 @@ function move(dir, only) {
   if (only) list = list.filter(function (el) { return el.matches(only); });
   var cur = document.activeElement;
   if (list.indexOf(cur) < 0) { if (list[0]) list[0].focus(); return; }
-  var r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  var best = null, bestScore = Infinity;
-  list.forEach(function (el) {
-    if (el === cur) return;
-    var q = el.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
-    var vertical = dir === 'up' || dir === 'down';
-    if ((dir === 'up' && dy >= -1) || (dir === 'down' && dy <= 1) || (dir === 'left' && dx >= -1) || (dir === 'right' && dx <= 1)) return;
-    var score = vertical ? Math.abs(dy) + Math.abs(dx) * 3 : Math.abs(dx) + Math.abs(dy) * 3;
-    if (score < bestScore) { bestScore = score; best = el; }
-  });
+  var others = list.filter(function (el) { return el !== cur; });
+  var index = spatialPick(cur.getBoundingClientRect(), others.map(function (el) { return el.getBoundingClientRect(); }), dir);
+  var best = others[index];
   if (best) { best.focus(); best.scrollIntoView({ block: 'nearest' }); }
 }
 
