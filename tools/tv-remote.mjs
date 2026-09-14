@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Télécommande réseau Samsung : envoie des touches à la TV depuis le Mac.
-// Usage : node poc/tv-remote.mjs KEY_1 KEY_2 KEY_3 KEY_4 KEY_5
+// Usage : node tools/tv-remote.mjs KEY_1 KEY_2 KEY_3 KEY_4 KEY_5
 // Au premier lancement, la TV demande d'autoriser « C411free » : acceptez avec la télécommande.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -10,7 +10,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // certificat auto-signé de la 
 const TV_IP = process.env.TV_IP || 'TV_IP';
 const TOKEN_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'secrets', 'tv-token.json');
 const keys = process.argv.slice(2);
-if (!keys.length) { console.log('Usage : node poc/tv-remote.mjs KEY_1 KEY_2 …'); process.exit(1); }
+if (!keys.length) { console.log('Usage : node tools/tv-remote.mjs KEY_1 KEY_2 …'); process.exit(1); }
 
 const token = await readFile(TOKEN_FILE, 'utf8').then((s) => JSON.parse(s).token).catch(() => '');
 const name = Buffer.from('C411free').toString('base64');

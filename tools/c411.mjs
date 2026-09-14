@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// POC n°2 — recherche c411 (Torznab) et récupération du .torrent.
+// Outil c411 : recherche (Torznab) et récupération d'un .torrent, pour diagnostiquer l'API depuis le Mac.
 // Usage :
-//   node poc/c411.mjs caps                         → capacités/catégories de l'API
-//   node poc/c411.mjs search "vaiana 2" [cat]      → résultats triés, compatibilité TV signalée
-//   node poc/c411.mjs grab <n°> "vaiana 2" [cat]   → télécharge le .torrent du résultat n° dans ./downloads
+//   node tools/c411.mjs caps                         → capacités/catégories de l'API
+//   node tools/c411.mjs search "vaiana 2" [cat]      → résultats triés, compatibilité TV signalée
+//   node tools/c411.mjs grab <n°> "vaiana 2" [cat]   → télécharge le .torrent du résultat n° dans ./downloads
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +74,7 @@ async function main() {
     const out = join(ROOT, 'downloads', `${r.title.replace(/[^\w.-]+/g, '_')}.torrent`);
     await mkdir(dirname(out), { recursive: true });
     await writeFile(out, Buffer.from(await res.arrayBuffer()));
-    console.log(`✅ ${mask(out, key)}\n   → node poc/freebox.mjs add "${out}"`);
+    console.log(`✅ ${mask(out, key)}\n   → node tools/freebox.mjs add "${out}"`);
   } else {
     console.log('Usage : caps | search "<requête>" [cat] | grab <n°> "<requête>" [cat]');
   }

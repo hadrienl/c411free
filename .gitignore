@@ -1,7 +1,7 @@
 secrets/
+logs/
 downloads/
-poc/tizen-player/videos.js
-**/secrets.js
+app/config.js
 node_modules/
 *.torrent
 .saggar/

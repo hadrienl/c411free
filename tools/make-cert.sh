@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Génère les certificats Samsung (auteur + distributeur liés au DUID de la TV)
 # avec l'outil tizencertificates, dans Docker.
-# Usage : poc/make-cert.sh <email_compte_samsung>
+# Usage : tools/make-cert.sh <email_compte_samsung>
 set -euo pipefail
 
-EMAIL="${1:?Usage : poc/make-cert.sh <email_compte_samsung>}"
+EMAIL="${1:?Usage : tools/make-cert.sh <email_compte_samsung>}"
 DUID="${DUID:-TV_DUID}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$ROOT/secrets/tizen-cert"

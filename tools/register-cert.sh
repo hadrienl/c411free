@@ -6,10 +6,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CERTS="$ROOT/secrets/tizen-cert/certificates"
 PASSWORD="$(cat "$ROOT/secrets/tizen-cert.password")"
 PROFILE="${1:-c411free}"
-TIZEN="${TIZEN_HOME:-$HOME/tizen-studio}/tools/ide/bin/tizen"
+TIZEN="${TIZEN_HOME:-$HOME/tizen-studio-cli}/tools/ide/bin/tizen"
 
 for f in author.p12 distributor.p12; do
-  [ -s "$CERTS/$f" ] || { echo "❌ $CERTS/$f manquant : lancez d'abord poc/make-cert.sh"; exit 1; }
+  [ -s "$CERTS/$f" ] || { echo "❌ $CERTS/$f manquant : lancez d'abord tools/make-cert.sh"; exit 1; }
 done
 
 "$TIZEN" security-profiles remove -n "$PROFILE" >/dev/null 2>&1 || true

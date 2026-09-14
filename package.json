@@ -1,0 +1,14 @@
+{
+  "name": "c411free",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App TV Samsung (Tizen) : catalogue c411, téléchargements Freebox et lecture des médias à la télécommande",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "check": "for f in app/js/*.js tools/*.mjs test/*.mjs; do node --check \"$f\" || exit 1; done",
+    "test": "node --test 'test/*.test.mjs'",
+    "deploy": "tools/deploy-tv.sh",
+    "deploy:debug": "DEBUG_LOG=1 tools/deploy-tv.sh",
+    "logs": "node tools/log-receiver.mjs"
+  }
+}

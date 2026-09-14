@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// POC n°1 — pilotage du téléchargeur Freebox OS.
+// Outil Freebox OS : autorisation de l'app (jeton dans secrets/freebox.json) et diagnostic du téléchargeur.
 // Usage :
-//   node poc/freebox.mjs auth                 → demande l'autorisation (valider sur l'écran de la Freebox)
-//   node poc/freebox.mjs list                 → liste les téléchargements
-//   node poc/freebox.mjs files <id>           → fichiers d'une tâche (avec preview_url)
-//   node poc/freebox.mjs add <fichier.torrent|url> [dossier]
-//   node poc/freebox.mjs stats                → statistiques globales
+//   node tools/freebox.mjs auth                 → demande l'autorisation (valider sur l'écran de la Freebox)
+//   node tools/freebox.mjs list                 → liste les téléchargements
+//   node tools/freebox.mjs files <id>           → fichiers d'une tâche (avec preview_url)
+//   node tools/freebox.mjs add <fichier.torrent|url> [dossier]
+//   node tools/freebox.mjs stats                → statistiques globales
 import { createHmac } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
