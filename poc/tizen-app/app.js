@@ -914,6 +914,7 @@ function scrubMove(direction) {
 }
 
 function scrubCommit() {
+  stopScrubHold();
   var target = player.scrub;
   player.scrub = null;
   if (target == null) return false;
@@ -927,11 +928,46 @@ function scrubCommit() {
 }
 
 function scrubCancel() {
+  stopScrubHold();
   if (player.scrub == null) return false;
   player.scrub = null;
   updateOsd();
   return true;
 }
+
+// Touche maintenue : la télécommande ne répète pas forcément keydown. Le curseur avance donc en continu
+// grâce à un minuteur jusqu'au relâchement (keyup) ; les répétitions éventuelles sont ignorées pour ne pas doubler la vitesse.
+var SCRUB_HOLD_DELAY = 300; // délai + 1er intervalle (420 ms) < fenêtre d'accélération de scrubMove (450 ms)
+var SCRUB_HOLD_TICK = 120;
+
+function startScrubHold(direction) {
+  if (player.holdDir === direction) return; // répétition d'une touche déjà maintenue
+  stopScrubHold();
+  player.holdDir = direction;
+  scrubMove(direction);
+  player.holdTimer = setTimeout(function () {
+    player.holdInterval = setInterval(function () {
+      if (player.holdDir !== direction || state.screen !== 'player') { stopScrubHold(); return; }
+      scrubMove(direction);
+      showOsd(false);
+    }, SCRUB_HOLD_TICK);
+  }, SCRUB_HOLD_DELAY);
+}
+
+function stopScrubHold() {
+  clearTimeout(player.holdTimer);
+  clearInterval(player.holdInterval);
+  player.holdTimer = null;
+  player.holdInterval = null;
+  player.holdDir = 0;
+}
+
+document.addEventListener('keyup', function (e) {
+  if (state.screen !== 'player' || (e.keyCode !== KEY.LEFT && e.keyCode !== KEY.RIGHT)) return;
+  debug('info', 'lecteur : touche relâchée', { key: e.keyCode, scrub: player.scrub });
+  stopScrubHold();
+});
+window.addEventListener('blur', stopScrubHold);
 
 // Sous-titres : <br> et \N deviennent des retours à la ligne, italique / gras / souligné sont conservés,
 // les autres balises (font, styles ASS…) sont retirées et tout le reste est échappé
@@ -983,10 +1019,11 @@ function playerKey(e) {
     case KEY.FF: seek(30); break;
     case KEY.RW: seek(-10); break;
     case KEY.LEFT:
-      if (osdHidden) seek(-10); else if (onBar) scrubMove(-1); else move('left');
-      break;
     case KEY.RIGHT:
-      if (osdHidden) seek(30); else if (onBar) scrubMove(1); else move('right');
+      if (onBar) debug('info', 'lecteur : touche barre', { key: code, repeat: !!e.repeat, maintenue: player.holdDir });
+      if (osdHidden) seek(code === KEY.LEFT ? -10 : 30);
+      else if (onBar) startScrubHold(code === KEY.LEFT ? -1 : 1);
+      else move(code === KEY.LEFT ? 'left' : 'right');
       break;
     case KEY.UP:
       if (!osdHidden && !onBar) move('up'); // des boutons vers la barre de lecture
@@ -1138,6 +1175,7 @@ function stopPlayback() {
   } catch (e) { /* lecteur indisponible */ }
   player.resumeReady = false;
   hideNextEpisode();
+  stopScrubHold();
   try { webapis.avplay.stop(); } catch (e) { /* déjà arrêté */ }
   try { webapis.avplay.close(); } catch (e) { /* déjà fermé */ }
   clearInterval(player.tick);
