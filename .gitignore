@@ -1,0 +1,8 @@
+secrets/
+downloads/
+poc/tizen-player/videos.js
+**/secrets.js
+node_modules/
+*.torrent
+.saggar/
+.DS_Store

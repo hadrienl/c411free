@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>C411free TV — POC lecteur</title>
+<script src="$WEBAPIS/webapis/webapis.js"></script>
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; background: #000; color: #fff; font: 32px/1.4 sans-serif; overflow: hidden; }
+  #av-player { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  #menu { position: absolute; inset: 80px 120px; }
+  #menu h1 { font-size: 56px; margin: 0 0 40px; }
+  .item { padding: 20px 32px; margin: 12px 0; border-radius: 16px; background: #1b2433; }
+  .item.focus { background: #2f6fed; transform: scale(1.02); }
+  #osd { position: absolute; left: 60px; right: 60px; bottom: 60px; padding: 24px 32px; border-radius: 16px; background: rgba(0,0,0,.7); white-space: pre-wrap; font-size: 26px; }
+  #subs { position: absolute; left: 0; right: 0; bottom: 140px; text-align: center; font-size: 44px; text-shadow: 0 0 8px #000; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<object id="av-player" type="application/avplayer"></object>
+<div id="menu">
+  <h1>C411free TV — test de lecture</h1>
+  <div id="list"></div>
+  <p>▲▼ choisir · OK lire · RETOUR quitter la vidéo · 🟢 piste audio · 🟡 sous-titres · 🔴 infos</p>
+</div>
+<div id="subs"></div>
+<div id="osd" class="hidden"></div>
+<script src="videos.js"></script>
+<script>
+// Liste générée par « node poc/freebox.mjs playlist <id…> » : liens de partage temporaires, en adresse LAN
+var VIDEOS = window.VIDEOS || [];
+
+var av = webapis.avplay;
+var focus = 0, playing = false, audioIdx = 0, textIdx = -1, tracks = [];
+var $ = function (id) { return document.getElementById(id); };
+
+function renderMenu() {
+  $('list').innerHTML = VIDEOS.map(function (v, i) {
+    return '<div class="item' + (i === focus ? ' focus' : '') + '">' + v.label.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
+  }).join('');
+}
+
+function osd(text, ms) {
+  $('osd').textContent = text;
+  $('osd').classList.remove('hidden');
+  clearTimeout(osd.t);
+  if (ms) osd.t = setTimeout(function () { $('osd').classList.add('hidden'); }, ms);
+}
+
+function trackList(type) {
+  return tracks.filter(function (t) { return t.type === type; });
+}
+
+function describeTracks() {
+  return tracks.map(function (t) { return t.type + '#' + t.index + ' ' + t.extra_info; }).join('\n');
+}
+
+function play(i) {
+  var v = VIDEOS[i];
+  $('menu').classList.add('hidden');
+  osd('Ouverture…\n' + v.label);
+  try {
+    av.open(v.url);
+    av.setDisplayRect(0, 0, 1920, 1080);
+    av.setListener({
+      onbufferingstart: function () { osd('Mise en mémoire tampon…'); },
+      onbufferingcomplete: function () { $('osd').classList.add('hidden'); },
+      onstreamcompleted: stop,
+      onerror: function (e) { osd('❌ Erreur AVPlay : ' + e); },
+      onsubtitlechange: function (duration, text) { $('subs').textContent = text; setTimeout(function () { $('subs').textContent = ''; }, duration); }
+    });
+    av.prepareAsync(function () {
+      tracks = av.getTotalTrackInfo();
+      // Préférer la piste audio française
+      var audios = trackList('AUDIO');
+      var fr = audios.filter(function (t) { return /fr/i.test(t.extra_info); })[0];
+      if (fr) { av.setSelectTrack('AUDIO', fr.index); audioIdx = audios.indexOf(fr); }
+      av.play();
+      playing = true;
+      osd('▶ ' + v.label + '\n' + describeTracks(), 8000);
+    }, function (e) { osd('❌ prepare : ' + e); });
+  } catch (e) {
+    osd('❌ ' + e.name + ' : ' + e.message);
+  }
+}
+
+function stop() {
+  try { av.stop(); av.close(); } catch (e) {}
+  playing = false;
+  $('subs').textContent = '';
+  $('osd').classList.add('hidden');
+  $('menu').classList.remove('hidden');
+  renderMenu();
+}
+
+function cycle(type) {
+  var list = trackList(type);
+  if (!list.length) return osd('Aucune piste ' + type, 3000);
+  if (type === 'AUDIO') {
+    audioIdx = (audioIdx + 1) % list.length;
+    av.setSelectTrack('AUDIO', list[audioIdx].index);
+    osd('🔊 ' + list[audioIdx].extra_info, 4000);
+  } else {
+    textIdx = textIdx + 1 >= list.length ? -1 : textIdx + 1;
+    if (textIdx < 0) { av.setSilentSubtitle(true); $('subs').textContent = ''; return osd('Sous-titres désactivés', 3000); }
+    av.setSilentSubtitle(false);
+    av.setSelectTrack('TEXT', list[textIdx].index);
+    osd('💬 ' + list[textIdx].extra_info, 4000);
+  }
+}
+
+['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow'].forEach(function (k) {
+  try { tizen.tvinputdevice.registerKey(k); } catch (e) {}
+});
+
+document.addEventListener('keydown', function (e) {
+  if (!playing) {
+    if (e.keyCode === 38) focus = (focus + VIDEOS.length - 1) % VIDEOS.length;
+    else if (e.keyCode === 40) focus = (focus + 1) % VIDEOS.length;
+    else if (e.keyCode === 13) return play(focus);
+    else if (e.keyCode === 10009) return tizen.application.getCurrentApplication().exit();
+    return renderMenu();
+  }
+  switch (e.keyCode) {
+    case 10009: case 413: stop(); break;                                        // Retour / Stop
+    case 10252: case 13: av.getState() === 'PLAYING' ? av.pause() : av.play(); break;
+    case 415: av.play(); break;
+    case 19: av.pause(); break;
+    case 417: case 39: av.jumpForward(30000); osd('⏩ +30 s', 1500); break;
+    case 412: case 37: av.jumpBackward(10000); osd('⏪ −10 s', 1500); break;
+    case 404: cycle('AUDIO'); break;                                             // Vert
+    case 405: cycle('TEXT'); break;                                              // Jaune
+    case 403: osd(describeTracks() + '\nposition ' + Math.round(av.getCurrentTime() / 1000) + ' s / ' + Math.round(av.getDuration() / 1000) + ' s', 8000); break; // Rouge
+  }
+});
+
+renderMenu();
+</script>
+</body>
+</html>
