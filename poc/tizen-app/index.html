@@ -183,7 +183,15 @@
   <div id="osd-state"></div>
   <div id="osd">
     <div id="osd-title"></div>
-    <div class="bar"><div id="osd-bar"></div></div>
+    <style>
+      #seekbar { position: relative; height: 10px; border-radius: 6px; background: rgba(255,255,255,.25); border: 3px solid transparent; transition: height .15s; }
+      #seekbar > #osd-bar { height: 100%; width: 0; border-radius: 4px; background: var(--accent); }
+      #seekbar:focus { height: 22px; border-color: #fff; }
+      #seek-cursor { position: absolute; top: 50%; left: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px rgba(59,130,246,.6); display: none; }
+      #seek-label { position: absolute; bottom: 38px; left: 0; transform: translateX(-50%); padding: 8px 18px; border-radius: 12px; background: rgba(10,15,28,.95); border: 2px solid var(--accent); font-size: 30px; white-space: nowrap; display: none; }
+      #seekbar:focus #seek-cursor, #seekbar:focus #seek-label { display: block; }
+    </style>
+    <div id="seekbar" data-f tabindex="-1"><div id="osd-bar"></div><div id="seek-cursor"></div><div id="seek-label"></div></div>
     <div class="osd-row"><span id="osd-time">0:00 / 0:00</span><span id="osd-tracks"></span></div>
     <div class="controls" id="controls">
       <span class="ctl" data-f tabindex="-1" id="ctl-back" data-act="back">⏪ 10 s</span>

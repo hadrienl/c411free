@@ -60,7 +60,7 @@ function show(screen, focusEl) {
 
 function focusables() {
   var scope = '.screen.active [data-f]';
-  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f]';
+  if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) { return el.offsetParent !== null; });
 }
 
@@ -547,18 +547,19 @@ function osdState(text, ms) {
   if (text && ms) osdState.t = setTimeout(function () { el.style.display = 'none'; }, ms);
 }
 
-// Barre de contrôle : visible au moindre appui, masquée après 5 s d'inactivité (sauf pause ou menu ouvert)
+// Barre de contrôle : visible au moindre appui, masquée après 5 s d'inactivité
+// (sauf pause, menu ouvert ou déplacement en cours sur la barre de lecture)
 function showOsd(focusControls) {
   var osd = $('osd');
   var wasHidden = osd.classList.contains('hidden');
   osd.classList.remove('hidden');
   if (focusControls || wasHidden) {
     var cur = document.activeElement;
-    if (!cur || !$('controls').contains(cur)) $('ctl-play').focus();
+    if (!cur || !(cur === $('seekbar') || $('controls').contains(cur))) $('ctl-play').focus();
   }
   clearTimeout(player.osdTimer);
   player.osdTimer = setTimeout(function () {
-    if (avState() === 'PLAYING' && !menuOpen()) osd.classList.add('hidden');
+    if (avState() === 'PLAYING' && !menuOpen() && player.scrub == null) osd.classList.add('hidden');
   }, 5000);
 }
 
@@ -567,8 +568,24 @@ function updateOsd() {
     var av = webapis.avplay, cur = av.getCurrentTime(), dur = av.getDuration();
     $('osd-time').textContent = fmtTime(cur) + ' / ' + fmtTime(dur);
     $('osd-bar').style.width = (dur ? cur / dur * 100 : 0).toFixed(2) + '%';
+    renderSeekCursor(cur, dur);
     if (dur && cur / dur >= WATCHED_RATIO && player.task && player.file) markWatched(player.task, player.file.name);
   } catch (e) { /* lecteur pas prêt */ }
+}
+
+// Curseur de la barre de lecture : position réelle, ou position visée pendant un déplacement
+function renderSeekCursor(cur, dur) {
+  var target = player.scrub == null ? cur : player.scrub;
+  var pct = dur ? Math.max(0, Math.min(100, target / dur * 100)) : 0;
+  $('seek-cursor').style.left = pct + '%';
+  var bubble = $('seek-label');
+  bubble.style.left = Math.max(4, Math.min(96, pct)) + '%';
+  if (player.scrub == null) {
+    bubble.textContent = fmtTime(cur);
+  } else {
+    var delta = Math.round((player.scrub - cur) / 1000);
+    bubble.textContent = fmtTime(player.scrub) + '  (' + (delta >= 0 ? '+' : '−') + fmtTime(Math.abs(delta) * 1000) + ')';
+  }
 }
 
 // --- Pistes : langue normalisée, libellés, préférences mémorisées ---
@@ -768,6 +785,60 @@ $('controls').addEventListener('click', function (e) {
   }
 });
 
+// --- Barre de lecture : déplacer un curseur, puis sauter précisément à ce point ---
+// Le pas accélère quand les appuis s'enchaînent (touche maintenue) : 10 s, 30 s, 1 min, 2 min, puis 5 % de la durée
+var SCRUB_STEPS = [10000, 30000, 60000, 120000];
+
+function scrubMove(direction) {
+  var av = webapis.avplay, st = avState();
+  if (st !== 'PLAYING' && st !== 'PAUSED') return;
+  var dur = av.getDuration(), now = Date.now();
+  // Seuls les appuis enchaînés pendant un même déplacement accélèrent : un nouveau déplacement repart à 10 s
+  var quick = player.scrub != null && now - (player.scrubAt || 0) < 450;
+  if (player.scrub == null) player.scrub = av.getCurrentTime();
+  player.scrubRun = quick ? (player.scrubRun || 0) + 1 : 0;
+  player.scrubAt = now;
+  var level = Math.min(Math.floor(player.scrubRun / 4), SCRUB_STEPS.length);
+  var step = level < SCRUB_STEPS.length ? SCRUB_STEPS[level] : Math.max(SCRUB_STEPS[SCRUB_STEPS.length - 1], dur * 0.05);
+  player.scrub = Math.max(0, Math.min(dur - 1000, player.scrub + direction * step));
+  renderSeekCursor(av.getCurrentTime(), dur);
+}
+
+function scrubCommit() {
+  var target = player.scrub;
+  player.scrub = null;
+  if (target == null) return false;
+  try {
+    webapis.avplay.seekTo(Math.floor(target), function () { updateOsd(); }, function (err) { toast('Déplacement impossible : ' + err, true); });
+    osdState('⏩ ' + fmtTime(target), 1200);
+  } catch (e) {
+    toast('Déplacement impossible : ' + (e.message || e.name), true);
+  }
+  return true;
+}
+
+function scrubCancel() {
+  if (player.scrub == null) return false;
+  player.scrub = null;
+  updateOsd();
+  return true;
+}
+
+// Sous-titres : <br> et \N deviennent des retours à la ligne, italique / gras / souligné sont conservés,
+// les autres balises (font, styles ASS…) sont retirées et tout le reste est échappé
+function renderSubtitle(text) {
+  var clean = String(text || '')
+    .replace(/\r/g, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/\\[Nn]/g, '\n')
+    .replace(/\{\\[^}]*\}/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<(?!\/?(i|b|u)>)[^>]*>/gi, '');
+  $('subs').innerHTML = clean
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/&lt;(\/?)(i|b|u)&gt;/gi, '<$1$2>');
+}
+
 function playerKey(e) {
   e.preventDefault();
   var code = e.keyCode;
@@ -779,18 +850,33 @@ function playerKey(e) {
     return;
   }
   var osdHidden = $('osd').classList.contains('hidden');
+  var onBar = !osdHidden && document.activeElement === $('seekbar');
   switch (code) {
-    case KEY.BACK: case KEY.STOP: stopPlayback(); return;
+    case KEY.BACK:
+      if (onBar && scrubCancel()) break; // 1er appui : annule le déplacement en cours
+      stopPlayback();
+      return;
+    case KEY.STOP: stopPlayback(); return;
     case KEY.PLAY_PAUSE: togglePause(); break;
     case KEY.PLAY: if (avState() === 'PAUSED') togglePause(); break;
     case KEY.PAUSE: if (avState() === 'PLAYING') togglePause(); break;
     case KEY.FF: seek(30); break;
     case KEY.RW: seek(-10); break;
-    case KEY.LEFT: if (osdHidden) seek(-10); else move('left'); break;
-    case KEY.RIGHT: if (osdHidden) seek(30); else move('right'); break;
-    case KEY.UP: case KEY.DOWN: break;
+    case KEY.LEFT:
+      if (osdHidden) seek(-10); else if (onBar) scrubMove(-1); else move('left');
+      break;
+    case KEY.RIGHT:
+      if (osdHidden) seek(30); else if (onBar) scrubMove(1); else move('right');
+      break;
+    case KEY.UP:
+      if (!osdHidden && !onBar) move('up'); // des boutons vers la barre de lecture
+      break;
+    case KEY.DOWN:
+      if (onBar) { scrubCancel(); $('ctl-play').focus(); }
+      break;
     case KEY.ENTER:
       if (osdHidden) { showOsd(true); return; }
+      if (onBar) { if (!scrubCommit()) togglePause(); break; }
       if (document.activeElement && $('controls').contains(document.activeElement)) document.activeElement.click();
       break;
   }
@@ -830,17 +916,18 @@ async function play(file, returnTo, task) {
 
     var av = webapis.avplay;
     var trace = function (step, extra) { debug('info', 'lecteur : ' + step, Object.assign({ state: avState() }, extra || {})); };
+    player.scrub = null;
     av.open(url);
     av.setListener({
       onbufferingstart: function () { osdState('Chargement…'); },
       onbufferingprogress: function (p) { osdState('Chargement… ' + p + ' %'); },
       onbufferingcomplete: function () { osdState(''); },
       oncurrentplaytime: function () {},
-      onstreamcompleted: function () { trace('fin'); if (player.task) markWatched(player.task, file.name); stopPlayback(); },
+      onstreamcompleted: function () { trace('fin'); player.scrub = null; if (player.task) markWatched(player.task, file.name); stopPlayback(); },
       onevent: function (type, data) { trace('event ' + type, { data: data }); },
       onerror: function (err) { trace('erreur ' + err); toast('Lecture impossible : ' + err, true); stopPlayback(); },
       onsubtitlechange: function (duration, text) {
-        $('subs').textContent = text;
+        renderSubtitle(text);
         clearTimeout(player.subTimer);
         player.subTimer = setTimeout(function () { $('subs').textContent = ''; }, duration);
       }
