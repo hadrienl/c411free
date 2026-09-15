@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadApp, plain } from './load.mjs';
 
-const app = loadApp(['core.js', 'names.js', 'storage.js', 'posters.js', 'intro.js']);
+const app = loadApp(['core.js', 'profiles.js', 'names.js', 'storage.js', 'posters.js', 'intro.js']);
 const chapters = (...pairs) => pairs.map(([s, name]) => ({ at: s * 1000, name }));
 
 // Motifs de chapitres relevés sur les épisodes des disques

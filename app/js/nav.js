@@ -100,6 +100,12 @@ document.addEventListener('keydown', function (e) {
     else if (e.keyCode === KEY.IME_CANCEL || e.keyCode === KEY.BACK) { e.preventDefault(); closeSearch(false); }
     return;
   }
+  // Saisie du surnom d'un profil (clavier Samsung) : valider ou annuler, le champ garde les flèches
+  if (el && el.id === 'nick-input') {
+    if (e.keyCode === KEY.ENTER || e.keyCode === KEY.IME_DONE) { e.preventDefault(); closeNickname(true); }
+    else if (e.keyCode === KEY.IME_CANCEL || e.keyCode === KEY.BACK) { e.preventDefault(); closeNickname(false); }
+    return;
+  }
   // Bandeau d'accueil sélectionné : ◀ ▶ changent de titre (et relancent le délai du passage automatique),
   // ▼ va sur la première vignette de la grille (et non sur celle placée au centre de l'écran)
   if (el && el.id === 'hero' && (e.keyCode === KEY.LEFT || e.keyCode === KEY.RIGHT)) {
@@ -127,6 +133,7 @@ document.addEventListener('keydown', function (e) {
       else if (state.screen === 'home') tizen.application.getCurrentApplication().exit();
       else if (state.screen === 'detail') show(state.detailFrom);
       else if (state.screen === 'files') openDownloads();
+      else if (state.screen === 'profile-edit') cancelProfileForm();
       else show('home');
       break;
   }

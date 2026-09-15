@@ -3,6 +3,7 @@
 App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à la télécommande :
 
 - **Catalogue c411** : nouveautés en vignettes, tiroir de filtres (type, année, genre proposés par c411), recherche avec le clavier natif Samsung, fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV).
+- **Profils** (avatar en haut à droite de l'accueil) : chaque membre de la famille a son surnom, son avatar (dix au choix) et ses propres épisodes vus, reprises, séries suivies et préférences de pistes. L'écran « Qui regarde ? » permet de changer de profil, d'en modifier ou d'en ajouter un.
 - **Suivi des séries** (onglet « Suivi » des filtres) : chaque série regardée est mémorisée avec son dernier épisode vu. L'onglet affiche les séries par dernière sortie, avec leurs nouveautés sur c411 (épisodes suivants, saisons suivantes). Une série ouvre la liste de ses releases, nouveautés en premier.
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Bande-annonce** dans la fiche : MP4 d'AlloCiné lu dans le lecteur de l'app (RETOUR revient à la fiche), sinon ouverture de l'app YouTube de la TV.
@@ -97,7 +98,8 @@ Variables utiles : `TV_IP` (sinon lue dans `secrets/local.env`), `LOG_HOST` (IP 
 - **Génériques** : AVPlay ne donne accès ni à l'image, ni au son, ni aux chapitres.
   - Les chapitres MKV sont lus directement dans le fichier : environ 1 épisode sur 6 en contient (mesuré sur les disques).
   - Sinon, l'app retient le générique d'une série quand on saute vers l'avant au début d'un épisode : sauts enchaînés dans les 6 premières minutes, totalisant 20 s à 3 min.
-- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`, `c411free.series`, `c411free.genres`.
+- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`, `c411free.series`, `c411free.genres`, `c411free.profiles`.
+  - Données propres à chaque profil : `watched`, `positions`, `trackPrefs` et `series`. Le premier profil garde ces clés telles quelles ; les suivants les suffixent par `@<id>` (ex. `c411free.watched@2`).
 
 ## Licence
 

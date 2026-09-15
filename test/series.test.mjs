@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadApp, plain } from './load.mjs';
 
-const app = loadApp(['core.js', 'names.js', 'storage.js', 'posters.js', 'intro.js', 'filters.js', 'series.js']);
+const app = loadApp(['core.js', 'profiles.js', 'names.js', 'storage.js', 'posters.js', 'intro.js', 'filters.js', 'series.js']);
 const rel = (hash, name, createdAt, posterUrl) => ({ infoHash: hash, name, createdAt, posterUrl });
 
 test('codes d\'épisode des fichiers et des releases', () => {

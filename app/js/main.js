@@ -50,6 +50,26 @@ try {
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redéployez avec tools/deploy-tv.sh', true);
 ensureSeriesBackfill(); // suivi des séries : reprise de l'historique des épisodes déjà vus
 renderFilters();
+// Profils
+$('open-profiles').addEventListener('click', function () { openProfiles(); });
+$('profiles-list').addEventListener('click', function (e) {
+  var tile = e.target.closest('[data-profile]'), edit = e.target.closest('[data-edit-profile]');
+  if (tile) chooseProfile(Number(tile.getAttribute('data-profile')));
+  else if (edit) openProfileForm('edit', Number(edit.getAttribute('data-edit-profile')));
+  else if (e.target.closest('[data-add-profile]')) openProfileForm('add');
+});
+$('nick-box').addEventListener('click', openNickname);
+$('nick-input').addEventListener('blur', function () { closeNickname(true); });
+$('nick-input').addEventListener('input', function (e) { $('pf-preview-name').textContent = cleanName(e.target.value) || 'Nouveau profil'; });
+$('pf-avatars').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-avatar]');
+  if (b) pickAvatar(b.getAttribute('data-avatar'));
+});
+$('pf-save').addEventListener('click', saveProfileForm);
+$('pf-cancel').addEventListener('click', cancelProfileForm);
+$('pf-remove').addEventListener('click', confirmRemoveProfile);
+renderProfileButton();
+
 // Bandeau d'accueil : sélectionné au démarrage s'il est prêt et que la sélection n'a pas encore bougé
 $('hero').addEventListener('click', openHeroItem);
 loadHero().then(function () {

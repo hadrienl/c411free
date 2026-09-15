@@ -18,6 +18,7 @@
     </div>
     <span class="btn" data-f tabindex="-1" id="open-filters">Filtres</span>
     <span class="btn" data-f tabindex="-1" id="open-downloads">🎬 Médias</span>
+    <span class="who-btn" data-f tabindex="-1" id="open-profiles"><span class="avatar" id="profile-avatar"></span><span class="tip" id="profile-tip"></span></span>
   </header>
   <div class="drawer" id="filters">
     <div class="drawer-inner">
@@ -107,6 +108,42 @@
   <p class="hint">OK pour lire · RETOUR téléchargements</p>
 </section>
 
+<section id="profiles" class="screen">
+  <div class="pf-center">
+    <h2 class="pf-title">Qui regarde ?</h2>
+    <p class="pf-sub">◀ ▶ choisir · OK pour regarder · ▼ modifier le profil · RETOUR accueil</p>
+    <div class="pf-list" id="profiles-list"></div>
+  </div>
+</section>
+
+<section id="profile-edit" class="screen">
+  <div class="pf-form">
+    <div class="pf-preview">
+      <span class="avatar" id="pf-preview"></span>
+      <div class="pf-preview-name" id="pf-preview-name"></div>
+    </div>
+    <div class="pf-panel">
+      <h2 id="pf-form-title">Modifier le profil</h2>
+      <div>
+        <div class="pf-label">Surnom</div>
+        <div class="search" id="nick-wrap">
+          <span class="search-box" data-f tabindex="-1" id="nick-box">✎ <span id="nick-label"></span></span>
+          <input id="nick-input" type="text" maxlength="16" autocomplete="off" placeholder="Surnom…">
+        </div>
+      </div>
+      <div>
+        <div class="pf-label">Avatar</div>
+        <div class="pf-avatars" id="pf-avatars"></div>
+      </div>
+      <div class="pf-actions">
+        <span class="btn primary" data-f tabindex="-1" id="pf-save">Enregistrer</span>
+        <span class="btn" data-f tabindex="-1" id="pf-cancel">Annuler</span>
+        <span class="btn danger pf-remove" data-f tabindex="-1" id="pf-remove">Supprimer le profil</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="player" class="screen">
   <object id="av" type="application/avplayer"></object>
   <div id="osd-state"></div>
@@ -148,6 +185,7 @@
 <script src="$WEBAPIS/webapis/webapis.js"></script>
 <script src="config.js"></script>
 <script src="js/core.js"></script>
+<script src="js/profiles.js"></script>
 <script src="js/names.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/c411.js"></script>

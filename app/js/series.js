@@ -123,14 +123,14 @@ function seriesSummary(series, matched) {
 }
 
 // ---------- Mémoire sur la TV ----------
-function loadSeries() { try { return JSON.parse(localStorage.getItem(SERIES_KEY)) || {}; } catch (e) { return {}; } }
+function loadSeries() { try { return JSON.parse(localStorage.getItem(pkey(SERIES_KEY))) || {}; } catch (e) { return {}; } }
 
 function saveSeries(all) {
   var keys = Object.keys(all);
   if (keys.length > SERIES_MAX) {
     keys.sort(function (a, b) { return all[a].at - all[b].at; }).slice(0, keys.length - SERIES_MAX).forEach(function (k) { delete all[k]; });
   }
-  try { localStorage.setItem(SERIES_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ }
+  try { localStorage.setItem(pkey(SERIES_KEY), JSON.stringify(all)); } catch (e) { /* stockage indisponible */ }
 }
 
 // Premier lancement : séries retrouvées dans l'historique des épisodes déjà vus

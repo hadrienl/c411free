@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadApp } from './load.mjs';
 
-const app = loadApp(['core.js', 'names.js', 'storage.js', 'tracks.js']);
+const app = loadApp(['core.js', 'profiles.js', 'names.js', 'storage.js', 'tracks.js']);
 
 test('langues des pistes normalisées', () => {
   assert.equal(app.langCode('fre'), 'fr');

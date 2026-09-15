@@ -33,8 +33,8 @@ function saveMediaView(view) { try { localStorage.setItem(MEDIA_VIEW_KEY, view);
 // ---------- Fichiers vus (mémorisés sur la TV) ----------
 // { "<info_hash ou id de tâche>": { total: <nombre de vidéos>, files: { "<nom du fichier>": <horodatage> } } }
 function taskKey(task) { return String(task.info_hash || task.id).toLowerCase(); }
-function loadWatched() { try { return JSON.parse(localStorage.getItem(WATCHED_KEY)) || {}; } catch (e) { return {}; } }
-function saveWatched(all) { try { localStorage.setItem(WATCHED_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
+function loadWatched() { try { return JSON.parse(localStorage.getItem(pkey(WATCHED_KEY))) || {}; } catch (e) { return {}; } }
+function saveWatched(all) { try { localStorage.setItem(pkey(WATCHED_KEY), JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
 function watchedEntry(task) { return loadWatched()[taskKey(task)] || { total: 0, files: {} }; }
 function isWatched(task, fileName) { return !!watchedEntry(task).files[fileName]; }
 
@@ -71,8 +71,8 @@ var RESUME_DONE_RATIO = 0.95;  // au-delà : fichier considéré comme terminé
 var POSITIONS_MAX = 200;
 
 function positionKey(task, file) { return (task ? taskKey(task) : 'fichier') + '|' + file.name; }
-function loadPositions() { try { return JSON.parse(localStorage.getItem(POSITIONS_KEY)) || {}; } catch (e) { return {}; } }
-function storePositions(all) { try { localStorage.setItem(POSITIONS_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
+function loadPositions() { try { return JSON.parse(localStorage.getItem(pkey(POSITIONS_KEY))) || {}; } catch (e) { return {}; } }
+function storePositions(all) { try { localStorage.setItem(pkey(POSITIONS_KEY), JSON.stringify(all)); } catch (e) { /* stockage indisponible */ } }
 function savedPosition(task, file) {
   if (file.url) return 0; // bande-annonce : toujours depuis le début
   var p = loadPositions()[positionKey(task, file)];
@@ -105,5 +105,5 @@ function persistPosition(cur, dur) {
   storePositions(all);
 }
 
-function loadPrefs() { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (e) { return {}; } }
-function savePrefs(patch) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(Object.assign(loadPrefs(), patch))); } catch (e) { /* stockage indisponible */ } }
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(pkey(PREFS_KEY))) || {}; } catch (e) { return {}; } }
+function savePrefs(patch) { try { localStorage.setItem(pkey(PREFS_KEY), JSON.stringify(Object.assign(loadPrefs(), patch))); } catch (e) { /* stockage indisponible */ } }

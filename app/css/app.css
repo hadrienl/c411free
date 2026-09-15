@@ -284,6 +284,53 @@ html.playing #ambient { display: none; }
 .grid-wrap, .list-wrap { transition: opacity .2s ease; }
 .grid-wrap.fade-out, .list-wrap.fade-out { opacity: 0; }
 
+/* ---------- Profils ---------- */
+.avatar { display: block; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
+.avatar svg { display: block; width: 100%; height: 100%; }
+/* En-tête au-dessus du bandeau : la bulle du bouton avatar reste visible */
+.top { position: relative; z-index: 5; }
+.who-btn { position: relative; flex: none; width: 88px; height: 88px; padding: 5px; border-radius: 50%; border: 3px solid var(--glass-edge); background: var(--glass), var(--glass-tint); box-shadow: var(--glass-inner), var(--glass-drop); transition: transform .12s, box-shadow .15s, border-color .15s; }
+.who-btn:focus { border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); transform: scale(1.08); }
+.who-btn .tip { position: absolute; top: calc(100% + 18px); right: -6px; padding: 10px 20px; border-radius: 14px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(10, 15, 28, .85); font-size: 26px; white-space: nowrap; box-shadow: var(--glass-inner); opacity: 0; pointer-events: none; transition: opacity .15s; }
+.who-btn:focus .tip { opacity: 1; }
+
+/* « Qui regarde ? » */
+.pf-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 60px; }
+.pf-title { margin: 0; font-size: 72px; font-weight: 800; letter-spacing: -1px; }
+.pf-sub { margin: -44px 0 0; font-size: 28px; color: var(--muted); }
+.pf-list { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 40px 60px; max-width: 1760px; }
+.pf-profile { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 250px; }
+.pf-tile { width: 230px; height: 230px; padding: 8px; border-radius: 50%; border: 4px solid transparent; transition: transform .15s, border-color .15s, box-shadow .15s; }
+.pf-tile .avatar { box-shadow: 0 16px 40px rgba(0, 0, 0, .45); }
+.pf-tile:focus { border-color: var(--glass-edge-focus); box-shadow: var(--glass-glow); transform: scale(1.08); }
+.pf-add span { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 4px dashed rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .03); font-size: 110px; font-weight: 300; color: var(--muted); }
+.pf-name { max-width: 250px; font-size: 36px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-name.dim { color: var(--muted); font-weight: 600; }
+.pf-current { height: 30px; margin-top: -12px; font-size: 22px; font-weight: 600; color: var(--ok); }
+.btn.pf-edit { font-size: 24px; padding: 10px 24px; }
+
+/* Modifier / ajouter un profil */
+.pf-form { position: absolute; inset: 0; display: grid; grid-template-columns: 520px 1fr; gap: 100px; align-items: center; padding: 0 150px; }
+.pf-preview { display: flex; flex-direction: column; align-items: center; gap: 30px; }
+.pf-preview .avatar { width: 360px; height: 360px; box-shadow: 0 0 0 8px rgba(255, 255, 255, .08), 0 30px 70px rgba(0, 0, 0, .55); }
+.pf-preview-name { min-height: 70px; font-size: 52px; font-weight: 800; text-align: center; }
+.pf-panel { display: grid; gap: 32px; }
+.pf-panel h2 { margin: 0; font-size: 60px; font-weight: 800; letter-spacing: -1px; }
+.pf-label { margin-bottom: 14px; font-size: 24px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+#nick-wrap { flex: none; width: 760px; }
+#nick-input { display: none; position: absolute; inset: 0; width: 100%; font: inherit; font-size: 36px; padding: 18px 30px; border-radius: 22px; border: 2px solid var(--glass-edge-focus); background: var(--glass), var(--glass-tint); color: var(--text); outline: none; }
+.search.editing #nick-input { display: block; }
+.nick-empty { color: var(--muted); }
+.pf-avatars { display: grid; grid-template-columns: repeat(5, 132px); gap: 26px; }
+.pf-pick { position: relative; width: 132px; height: 132px; padding: 6px; border-radius: 50%; border: 4px solid transparent; transition: transform .12s, border-color .12s, box-shadow .12s; }
+.pf-pick:focus { transform: scale(1.1); border-color: rgba(255, 255, 255, .6); }
+.pf-pick.selected { border-color: var(--glass-edge-focus); box-shadow: var(--glass-glow); }
+.pf-pick.selected::after { content: "✓"; position: absolute; right: -2px; bottom: -2px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 28px; font-weight: 800; display: grid; place-items: center; border: 3px solid #0a0f1c; }
+.pf-actions { display: flex; align-items: center; gap: 22px; }
+.btn.pf-remove { margin-left: auto; }
+.btn.danger { background: var(--glass), rgba(220, 38, 38, .38); }
+.btn.danger:focus { background: var(--glass-focus), rgba(220, 38, 38, .75); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
+
 /* ---------- Bandeau d'accueil (exclusivités populaires) ---------- */
 /* Pleine largeur en tête de la zone défilante : il disparaît en douceur quand on descend dans la grille */
 #hero { position: relative; height: 640px; margin: -34px -80px 40px; overflow: hidden; outline: none; transition: box-shadow .2s; }
