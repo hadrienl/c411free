@@ -56,7 +56,8 @@ function resetFilters() {
   applyFilters();
 }
 
-function cardHtml(prefix, t) {
+// note : texte à la place de la ligne langue · taille · sources (ex. raison d'une recommandation)
+function cardHtml(prefix, t, note) {
   var n = prettyName(t.name);
   var text = n.title + (n.episode ? ' · ' + n.episode : '') + (n.year ? ' (' + n.year + ')' : '');
   var img = t.posterUrl
@@ -70,7 +71,7 @@ function cardHtml(prefix, t) {
     + (prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash] ? '<span class="q right fresh">Nouveau</span>' : '')
     + '</div></div>'
     + '<div class="cap">' + esc(text) + '</div>'
-    + '<div class="sub">' + esc([shortLang(t.language, t.name), gb(t.size), '▲ ' + (t.seeders || 0)].filter(Boolean).join(' · ')) + '</div>'
+    + '<div class="sub' + (note ? ' reason' : '') + '">' + esc(note || [shortLang(t.language, t.name), gb(t.size), '▲ ' + (t.seeders || 0)].filter(Boolean).join(' · ')) + '</div>'
     + '</div>';
 }
 
@@ -232,6 +233,7 @@ function loadMoreIfNeeded(gridId) {
 }
 
 async function loadHome(reset) {
+  if (isForYouMode(state.filters)) { if (reset) loadForYou(); return; } // onglet Pour vous : recommandations du profil
   if (isFollowMode(state.filters)) { if (reset) loadFollowed(); return; } // onglet Suivi : séries suivies à la place des nouveautés
   try {
     var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, filterParams(state.filters));

@@ -16,7 +16,7 @@ test('paramètres envoyés à c411', () => {
 });
 
 test('types proposés : sous-catégories vidéo', () => {
-  assert.deepEqual(plain(app.FILTER_TYPES.map((t) => t.label)), ['Tout', 'Films', 'Séries', 'Animation', 'Documentaires', 'Suivi']);
+  assert.deepEqual(plain(app.FILTER_TYPES.map((t) => t.label)), ['Tout', 'Films', 'Séries', 'Animation', 'Documentaires', 'Pour vous', 'Suivi']);
   assert.equal(app.FILTER_TYPES.find((t) => t.label === 'Animation').subcat, '1,2', 'films et séries d\'animation');
 });
 

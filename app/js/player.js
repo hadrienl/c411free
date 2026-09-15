@@ -44,6 +44,7 @@ function updateOsd() {
     // Sauvegarde régulière de la position (TV éteinte, app fermée brutalement…)
     if (player.resumeReady && Date.now() - (player.positionSavedAt || 0) > 10000) {
       persistPosition(cur, dur);
+      recordPlayback(cur / dur); // historique de visionnage du profil (recommandations)
       player.positionSavedAt = Date.now();
     }
     // Épisode suivant : bouton proposé au début du générique
@@ -563,6 +564,7 @@ async function play(file, returnTo, task) {
         player.scrub = null;
         player.resumeReady = false; // fichier terminé : pas de position à reprendre
         clearPosition(player.task, file);
+        recordPlayback(1);
         if (player.task) markWatched(player.task, file.name);
         // Enchaînement automatique sur l'épisode suivant, sauf si la proposition a été écartée
         var next = nextFile(), task = player.task;
@@ -653,7 +655,11 @@ function stopPlayback() {
   // Mémoriser la position avant d'arrêter (effacée si > 95 % ou < 10 s)
   try {
     var st = avState();
-    if (player.resumeReady && (st === 'PLAYING' || st === 'PAUSED')) persistPosition(webapis.avplay.getCurrentTime(), webapis.avplay.getDuration());
+    if (player.resumeReady && (st === 'PLAYING' || st === 'PAUSED')) {
+      var stopAt = webapis.avplay.getCurrentTime(), stopDur = webapis.avplay.getDuration();
+      persistPosition(stopAt, stopDur);
+      if (stopDur) recordPlayback(stopAt / stopDur);
+    }
   } catch (e) { /* lecteur indisponible */ }
   // Saut en cours au moment de quitter : considéré comme terminé
   var learned = player.skipPending && learnedSkip(player.skipPending, player.skipPending.lastAt + SKIP_SETTLE_MS);

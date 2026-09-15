@@ -381,6 +381,11 @@ html.playing #ambient { display: none; }
 /* Bande-annonce : bouton de la fiche, masqué tant qu'aucune vidéo n'est trouvée */
 .btn.off { display: none; }
 
+/* Recommandations : introduction sur toute la largeur, raison sous chaque vignette ; onglets de type plus compacts (7 onglets) */
+.grid .reco-intro { grid-column: 1 / -1; margin-bottom: -6px; font-size: 26px; color: var(--muted); }
+.sub.reason { color: var(--accent-soft); }
+#filter-type .btn { padding: 18px 26px; }
+
 /* Suivi des séries : onglet séparé des types, pastille des nouveautés */
 .tab.follow { margin-left: 18px; }
 .poster .q.fresh { background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .06)), rgba(59, 130, 246, .85); border-color: rgba(191, 219, 254, .7); color: #fff; font-weight: 600; }

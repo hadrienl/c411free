@@ -4,6 +4,7 @@ App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à l
 
 - **Catalogue c411** : nouveautés en vignettes, tiroir de filtres (type, année, genre proposés par c411), recherche avec le clavier natif Samsung, fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV).
 - **Profils** (avatar en haut à droite de l'accueil) : chaque membre de la famille a son surnom, son avatar (dix au choix) et ses propres épisodes vus, reprises, séries suivies et préférences de pistes. L'écran « Qui regarde ? » permet de changer de profil, d'en modifier ou d'en ajouter un.
+- **Pour vous** (onglet des filtres) : recommandations propres à chaque profil. Les goûts sont déduits de ce qui a été regardé et jusqu'où (film fini ou abandonné, nombre d'épisodes d'une série), à partir des genres, mots-clés, réalisateurs et acteurs des fiches TMDB de c411. Les propositions viennent de c411, sans ce qui a déjà été vu ou est déjà sur les disques, avec la raison sous chaque vignette.
 - **Suivi des séries** (onglet « Suivi » des filtres) : chaque série regardée est mémorisée avec son dernier épisode vu. L'onglet affiche les séries par dernière sortie, avec leurs nouveautés sur c411 (épisodes suivants, saisons suivantes). Une série ouvre la liste de ses releases, nouveautés en premier.
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Bande-annonce** dans la fiche : MP4 d'AlloCiné lu dans le lecteur de l'app (RETOUR revient à la fiche), sinon ouverture de l'app YouTube de la TV.

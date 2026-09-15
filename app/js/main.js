@@ -49,6 +49,7 @@ try {
 } catch (e) { /* hors TV */ }
 if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redéployez avec tools/deploy-tv.sh', true);
 ensureSeriesBackfill(); // suivi des séries : reprise de l'historique des épisodes déjà vus
+ensureHistoryBackfill(); // recommandations : historique de visionnage repris des fichiers déjà vus
 renderFilters();
 // Profils
 $('open-profiles').addEventListener('click', function () { openProfiles(); });
