@@ -332,6 +332,11 @@ html.playing #ambient { display: none; }
 .btn.danger:focus { background: var(--glass-focus), rgba(220, 38, 38, .75); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
 
 /* ---------- Bandeau d'accueil (exclusivités populaires) ---------- */
+/* Le bandeau occupe l'écran dès y = 0. L'en-tête, sorti du flux, reste posé par-dessus à sa position habituelle.
+   Le tiroir ouvert récupère seul la place nécessaire sous les boutons. */
+#home { padding-top: 0; }
+#home > .top { position: absolute; top: 40px; left: 80px; right: 80px; margin-bottom: 0; }
+#home > .drawer.open { margin-top: 128px; }
 /* Pleine largeur en tête de la zone défilante : il disparaît en douceur quand on descend dans la grille */
 #hero { position: relative; height: 640px; margin: -34px -80px 40px; overflow: hidden; outline: none; transition: box-shadow .2s; }
 #hero.off { display: none; }
@@ -363,7 +368,7 @@ html.playing #ambient { display: none; }
 /* ---------- Filtres : tiroir animé entre l'en-tête et les vignettes ---------- */
 .btn .ico { width: 30px; height: 30px; fill: currentColor; vertical-align: -5px; margin-right: 10px; }
 .btn .count { display: inline-block; min-width: 38px; margin-left: 12px; padding: 0 10px; border-radius: 19px; background: var(--accent); color: #fff; font-size: 24px; line-height: 38px; text-align: center; vertical-align: 3px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45); }
-.drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); margin-bottom: 0; transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin-bottom .38s ease; }
+.drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); margin-bottom: 0; transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin .38s ease; }
 .drawer.open { grid-template-rows: 1fr; opacity: 1; transform: none; margin-bottom: 18px; }
 .drawer-inner { min-height: 0; overflow: hidden; margin: 0 -24px; padding: 0 24px; }
 .drawer.settled .drawer-inner { overflow: visible; }

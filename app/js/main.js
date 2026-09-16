@@ -75,11 +75,19 @@ renderProfileButton();
 $('hero').addEventListener('click', openHeroItem);
 loadHero().then(function () {
   var active = document.activeElement, firstCard = $('home-grid').querySelector('[data-f]');
-  if (!$('hero').classList.contains('off') && state.screen === 'home' && (!active || active === document.body || active === firstCard)) $('hero').focus();
+  if (!$('hero').classList.contains('off') && state.screen === 'home' && (!active || active === document.body || active === firstCard)) {
+    $('hero').parentNode.scrollTop = 0;
+    $('hero').focus({ preventScroll: true });
+  }
 }).catch(function (e) { debug('error', 'bandeau : ' + e.message); });
 loadHome(true).then(function () {
-  var first = $('home-grid').querySelector('[data-f]');
-  (first || $('search-box')).focus();
+  var hero = $('hero'), first = $('home-grid').querySelector('[data-f]');
+  if (!hero.classList.contains('off')) {
+    hero.parentNode.scrollTop = 0;
+    hero.focus({ preventScroll: true });
+  } else {
+    (first || $('search-box')).focus({ preventScroll: true });
+  }
 });
 debug('info', 'app démarrée (v' + VERSION + ')');
 // Version avec journal : vérifie au démarrage que la recherche de bande-annonce aboutit sur la TV (résultat journalisé)
