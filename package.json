@@ -9,6 +9,7 @@
     "test": "node --test 'test/*.test.mjs'",
     "deploy": "tools/deploy-tv.sh",
     "deploy:debug": "DEBUG_LOG=1 tools/deploy-tv.sh",
-    "logs": "node tools/log-receiver.mjs"
+    "logs": "node tools/log-receiver.mjs",
+    "chrome": "tools/run-chrome.sh"
   }
 }

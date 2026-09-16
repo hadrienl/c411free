@@ -41,6 +41,22 @@ test('▲ remonte sur la rangée précédente, au plus proche horizontalement', 
   assert.equal(pick(TOUT, 'up'), undefined);
 });
 
+// Piège documenté (corrigé dans move(), pas ici) : le bandeau de l'accueil occupe toute la largeur derrière l'en-tête.
+// Il chevauche verticalement les rangées de boutons, donc spatialPick le considère « sur la même rangée » et son faible
+// écart horizontal l'emporte sur un bouton situé en bout de rangée. move() restreint donc ◀ ▶ à l'en-tête.
+test('◀ ▶ : un élément pleine largeur chevauchant la rangée l\'emporte', () => {
+  const ONGLET = box(80, 244, 720, 68);          // groupe « Accueil … En attente » de la rangée 3
+  const FILTRES = box(1610, 244, 230, 68);       // bouton « Filtres », à l'autre bout de la rangée
+  const HERO = box(0, 0, 1920, 800);             // bandeau, sous l'en-tête et sur toute la largeur
+  assert.equal(pick(ONGLET, 'right', [ONGLET, FILTRES]), FILTRES, 'sans le bandeau, ▶ atteint Filtres');
+  assert.equal(pick(ONGLET, 'right', [ONGLET, FILTRES, HERO]), HERO, 'avec le bandeau, c\'est lui qui gagne');
+  // Le filtre de move() revient à retirer le bandeau des candidats
+  const dansEnTete = [ONGLET, FILTRES, HERO].filter((r) => r !== HERO);
+  assert.equal(pick(ONGLET, 'right', dansEnTete), FILTRES, 'candidats limités à l\'en-tête : ▶ atteint Filtres');
+  // ▲ ▼ ne sont pas concernés : depuis la rangée 3, ▼ doit toujours atteindre le bandeau
+  assert.equal(pick(ONGLET, 'down', [ONGLET, FILTRES, HERO]), HERO);
+});
+
 test('défilement : juste ce qu\'il faut pour montrer l\'élément avec sa marge', () => {
   // Liste de 900 px de haut, défilée à 1000 ; marge 60
   assert.equal(app.scrollTargetFor(1200, 1600, 1000, 900, 60), null, 'déjà visible');

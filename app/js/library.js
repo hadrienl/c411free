@@ -14,42 +14,40 @@ var SORTS = {
   sizeAsc: function (a, b) { return a.size - b.size; }
 };
 
-// Tris regroupés par paire, chacun dans une liste déroulante : le bouton affiche le dernier choix du groupe
-// et est mis en évidence quand c'est le tri actif. short = libellé du bouton, label = libellé dans la liste.
-var SORT_GROUPS = {
-  date: { title: 'Date d\'ajout', options: [{ value: 'recent', short: 'Récents', label: 'Plus récents en premier' }, { value: 'old', short: 'Anciens', label: 'Plus anciens en premier' }] },
-  name: { title: 'Nom', options: [{ value: 'az', short: 'A → Z', label: 'De A à Z' }, { value: 'za', short: 'Z → A', label: 'De Z à A' }] },
-  size: { title: 'Taille', options: [{ value: 'size', short: 'Taille ↓', label: 'Plus gros en premier' }, { value: 'sizeAsc', short: 'Taille ↑', label: 'Plus petits en premier' }] }
-};
-state.dlSortChoice = { date: 'recent', name: 'az', size: 'size' };
+// Un seul bouton de tri, ouvrant la liste des six ordres. short = libellé du bouton, label = libellé dans la liste.
+var SORT_OPTIONS = [
+  { value: 'recent', short: 'Récents', label: 'Plus récents' },
+  { value: 'old', short: 'Anciens', label: 'Plus anciens' },
+  { value: 'az', short: 'A → Z', label: 'De A à Z' },
+  { value: 'za', short: 'Z → A', label: 'De Z à A' },
+  { value: 'size', short: 'Taille ↓', label: 'Plus gros' },
+  { value: 'sizeAsc', short: 'Taille ↑', label: 'Plus petits' }
+];
 
-function sortGroupOf(sort) {
-  return Object.keys(SORT_GROUPS).filter(function (g) { return SORT_GROUPS[g].options.some(function (o) { return o.value === sort; }); })[0];
+// Tri retenu sur la TV, commun à tous les profils (comme la vue)
+var MEDIA_SORT_KEY = 'c411free.mediaSort';
+function loadMediaSort() {
+  try { return SORTS[localStorage.getItem(MEDIA_SORT_KEY)] ? localStorage.getItem(MEDIA_SORT_KEY) : 'recent'; } catch (e) { return 'recent'; }
+}
+function saveMediaSort(sort) {
+  try { localStorage.setItem(MEDIA_SORT_KEY, sort); } catch (e) { /* stockage indisponible */ }
+}
+state.dlSort = loadMediaSort();
+
+function renderSortButton() {
+  var option = SORT_OPTIONS.filter(function (o) { return o.value === state.dlSort; })[0] || SORT_OPTIONS[0];
+  $('dl-sort').innerHTML = esc(option.short) + '<span class="caret">▾</span>';
 }
 
-function renderSortButtons() {
-  Object.keys(SORT_GROUPS).forEach(function (g) {
-    var choice = state.dlSortChoice[g];
-    var option = SORT_GROUPS[g].options.filter(function (o) { return o.value === choice; })[0];
-    var btn = $('dl-sort-' + g);
-    btn.innerHTML = esc(option.short) + '<span class="caret">▾</span>';
-    btn.classList.toggle('selected', sortGroupOf(state.dlSort) === g);
-  });
-}
-
-function pickMediaSort(group) {
-  // Coche seulement si ce groupe est le tri en cours (sinon la sélection se place sur la première option)
-  var active = sortGroupOf(state.dlSort) === group ? state.dlSort : null;
-  openPicker($('dl-sort-' + group), SORT_GROUPS[group].title, SORT_GROUPS[group].options, active, function (it) {
+function pickMediaSort() {
+  openPicker($('dl-sort'), 'Trier par', SORT_OPTIONS, state.dlSort, function (it) {
     state.dlSort = it.value;
-    state.dlSortChoice[group] = it.value;
-    renderSortButtons();
+    saveMediaSort(it.value);
+    renderSortButton();
     renderDownloads();
     $('downloads-list').parentNode.scrollTop = 0;
   });
 }
-
-renderSortButtons();
 
 // Vignette d'un média : affiche, nombre de vidéos, badge « vu », progression d'un téléchargement en cours
 function mediaCardHtml(m, posterCache, nowMs) {
@@ -115,33 +113,38 @@ function mediaRowHtml(m, index) {
 state.mediaView = loadMediaView();
 
 function renderViewButton() {
-  buttonContent('dl-view', state.mediaView === 'grid' ? 'list' : 'grid', state.mediaView === 'grid' ? 'Liste' : 'Icônes');
+  document.querySelectorAll('#dl-views [data-view]').forEach(function (el) {
+    el.classList.toggle('selected', el.getAttribute('data-view') === state.mediaView);
+  });
 }
 
-function toggleMediaView() {
-  state.mediaView = state.mediaView === 'grid' ? 'list' : 'grid';
-  saveMediaView(state.mediaView);
+function setMediaView(view) {
+  if (state.mediaView === view) return;
+  state.mediaView = view;
+  saveMediaView(view);
   renderViewButton();
   renderDownloads();
   $('downloads-list').parentNode.scrollTop = 0;
-  if (state.mediaView === 'grid') loadMediaPosters();
+  if (view === 'grid') loadMediaPosters();
 }
 
 // Médias : vidéos des disques (films et dossiers d'épisodes) en vignettes ou en liste, avec la progression des téléchargements.
 // Rafraîchi toutes les 3 s : seuls les éléments modifiés sont réécrits (pas de clignotement des affiches ni perte du focus).
 function renderDownloads() {
   var focusedId = document.activeElement && document.activeElement.getAttribute('data-id');
-  var media = state.media;
+  var media = state.media, tab = state.tab.library, q = state.query.library;
+  // L'onglet range les médias en films et séries ; la recherche filtre ensuite sur le titre affiché
   var list = media.entries.map(function (m, i) { return { m: m, i: i }; })
+    .filter(function (x) { return inLibraryTab(x.m, tab) && matchesQuery(label(x.m.name), q); })
     .sort(function (a, b) { return SORTS[state.dlSort](a.m, b.m); });
-  $('dl-count').textContent = media.entries.length + ' média(s)';
-  // Progression de l'analyse sous le titre (position absolue : sa longueur variable ne décale pas les boutons)
+  $('dl-count').textContent = list.length + (tab === 'all' ? ' média(s)' : tab === 'series' ? ' série(s)' : ' film(s)');
   $('dl-scan').textContent = media.scanning ? 'Analyse des disques… ' + media.progress : '';
   var grid = $('downloads-list'), asGrid = state.mediaView === 'grid';
   renderViewButton();
+  renderSortButton();
   grid.className = asGrid ? 'grid' : '';
   if (!list.length) {
-    grid.innerHTML = '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : 'Aucune vidéo trouvée.') + '</div>';
+    grid.innerHTML = '<div class="empty">' + (media.scanning ? 'Analyse des disques en cours…' : q ? 'Aucun résultat pour cette recherche.' : 'Aucune vidéo trouvée.') + '</div>';
     grid.renderedIds = '';
     return;
   }
@@ -173,7 +176,7 @@ function loadMediaPosters() {
 }
 
 // Index des vidéos : cache immédiat, réanalyse des disques en arrière-plan (au plus toutes les 10 min,
-// à la fin d'un téléchargement, ou à la demande avec « Actualiser »)
+// ou à la fin d'un téléchargement)
 var MEDIA_MAX_AGE = 10 * 60 * 1000;
 var mediaCache = Media.loadCache();
 state.media = {
@@ -233,18 +236,19 @@ async function refreshDownloads() {
   }
 }
 
-$('dl-rescan').addEventListener('click', function () { scanMedia(true); });
-$('dl-view').addEventListener('click', toggleMediaView);
-
-async function openDownloads() {
-  show('downloads');
+async function openDownloads(focusEl) {
+  state.section = 'library';
+  renderTopbar();
+  show('downloads', focusEl);
   stopPolling();
   updateMediaEntries();
   renderDownloads(); // affichage immédiat depuis le cache
   scanMedia(false);  // réanalyse en arrière-plan si l'index a plus de 10 min
   await refreshDownloads();
   loadMediaPosters(); // affiches manquantes, recherchées en arrière-plan
-  if (!document.activeElement || !document.activeElement.hasAttribute('data-id')) {
+  // Sélection laissée à l'en-tête si c'est de là qu'on vient (segment « Bibliothèque », onglet, tri)
+  var inTopbar = document.activeElement && document.activeElement.closest && document.activeElement.closest('#topbar');
+  if (!inTopbar && (!document.activeElement || !document.activeElement.hasAttribute('data-id'))) {
     var target = (state.lastFocus.downloads && $(state.lastFocus.downloads)) || $('downloads-list').querySelector('[data-id]');
     if (target) { target.focus(); target.scrollIntoView({ block: 'nearest' }); }
   }

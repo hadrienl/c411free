@@ -5,35 +5,61 @@
 <title>C411free</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
-<body>
+<body data-screen="home">
 
 <div id="ambient"><div class="amb"></div><div class="amb"></div></div>
 
-<section id="home" class="screen active">
-  <header class="top">
+<!-- En-tête unique des sections Catalogue et Bibliothèque : recherche, sections, sous-onglets -->
+<header id="topbar">
+  <div class="tb-row">
     <div class="brand">C411free</div>
     <div class="search">
-      <span class="search-box" data-f tabindex="-1" id="search-box"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span id="search-label">Rechercher un film, une série…</span></span>
+      <span class="search-box" data-f tabindex="-1" id="search-box"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span id="search-label">Rechercher sur c411…</span></span>
       <input id="query" type="text" placeholder="Titre du film ou de la série…" autocomplete="off">
     </div>
-    <span class="btn" data-f tabindex="-1" id="open-filters">Filtres</span>
-    <span class="btn" data-f tabindex="-1" id="open-downloads"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg><span>Médias</span></span>
     <span class="who-btn" data-f tabindex="-1" id="open-profiles"><span class="avatar" id="profile-avatar"></span><span class="tip" id="profile-tip"></span></span>
-  </header>
+  </div>
+  <div class="tb-row">
+    <nav class="seg" id="sections">
+      <span class="btn" data-f tabindex="-1" id="sec-catalog" data-section="catalog"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>Catalogue</span></span>
+      <span class="btn" data-f tabindex="-1" id="sec-library" data-section="library"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg><span>Bibliothèque</span></span>
+    </nav>
+  </div>
+  <div class="tb-row" id="catalog-tabs">
+    <nav class="seg small">
+      <span class="btn" data-f tabindex="-1" id="tab-home" data-tab="home">Accueil</span>
+      <span class="btn" data-f tabindex="-1" id="tab-foryou" data-tab="foryou"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3ZM5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z"/></svg><span>Pour vous</span></span>
+      <span class="btn" data-f tabindex="-1" id="tab-follow" data-tab="follow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m9 3 3 3 3-3M9 22h6"/></svg><span>Suivi</span></span>
+      <span class="btn" data-f tabindex="-1" id="tab-later" data-tab="later"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4Z"/></svg><span>En attente</span></span>
+    </nav>
+    <span class="btn small" data-f tabindex="-1" id="open-filters"></span>
+  </div>
+  <div class="tb-row" id="library-tabs">
+    <nav class="seg small">
+      <span class="btn" data-f tabindex="-1" id="tab-all" data-tab="all">Tout</span>
+      <span class="btn" data-f tabindex="-1" id="tab-films" data-tab="films">Films</span>
+      <span class="btn" data-f tabindex="-1" id="tab-series" data-tab="series">Séries</span>
+    </nav>
+    <span class="btn select small" data-f tabindex="-1" id="dl-sort"></span>
+    <nav class="seg small" id="dl-views">
+      <span class="btn" data-f tabindex="-1" id="view-grid" data-view="grid"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></span>
+      <span class="btn" data-f tabindex="-1" id="view-list" data-view="list"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span>
+    </nav>
+  </div>
+</header>
+
+<section id="home" class="screen active">
   <div class="drawer" id="filters">
     <div class="drawer-inner">
       <div class="drawer-panel">
         <div class="filter-row">
           <span class="filter-label">Type</span>
-          <nav class="tabs" id="filter-type">
-            <span class="btn tab selected" data-f tabindex="-1" data-subcat="">Tout</span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="6">Films</span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="7">Séries</span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="1,2">Animation</span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="4,57">Documentaires</span>
-            <span class="btn tab follow" data-f tabindex="-1" data-subcat="foryou"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3ZM5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z"/></svg><span>Pour vous</span></span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="follow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m9 3 3 3 3-3M9 22h6"/></svg><span>Suivi</span></span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="later"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4Z"/></svg><span>En attente</span></span>
+          <nav class="seg" id="filter-type">
+            <span class="btn" data-f tabindex="-1" data-subcat="">Tout</span>
+            <span class="btn" data-f tabindex="-1" data-subcat="6">Films</span>
+            <span class="btn" data-f tabindex="-1" data-subcat="7">Séries</span>
+            <span class="btn" data-f tabindex="-1" data-subcat="1,2">Animation</span>
+            <span class="btn" data-f tabindex="-1" data-subcat="4,57">Documentaires</span>
           </nav>
         </div>
         <div class="filter-row">
@@ -58,12 +84,8 @@
       </div>
       <div class="hero-dots" id="hero-dots"></div>
     </div>
+    <div id="home-title" class="off"></div>
     <div class="grid" id="home-grid"></div><div class="grid-loading"><span class="spinner"></span>Chargement…</div></div>
-</section>
-
-<section id="results" class="screen">
-  <header class="top"><div class="brand" id="results-title">Résultats</div></header>
-  <div class="grid-wrap"><div class="grid" id="results-grid"></div><div class="grid-loading"><span class="spinner"></span>Chargement…</div></div>
 </section>
 
 <section id="detail" class="screen">
@@ -90,18 +112,11 @@
 </section>
 
 <section id="downloads" class="screen">
-  <header class="top">
-    <div class="brand">Médias <small id="dl-count"></small><span class="scan-status" id="dl-scan"></span></div>
-    <nav class="tabs" id="dl-sorts">
-      <span class="btn tab select selected" data-f tabindex="-1" id="dl-sort-date" data-sort-group="date">Récents</span>
-      <span class="btn tab select" data-f tabindex="-1" id="dl-sort-name" data-sort-group="name">A → Z</span>
-      <span class="btn tab select" data-f tabindex="-1" id="dl-sort-size" data-sort-group="size">Taille ↓</span>
-      <span class="btn" data-f tabindex="-1" id="dl-view"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span>Liste</span></span>
-      <span class="btn" data-f tabindex="-1" id="dl-rescan"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 0 0 6.3 6.3L4 9m2 6a7 7 0 0 0 11.7 2.7L20 15"/></svg><span>Actualiser</span></span>
-    </nav>
-  </header>
-  <div class="list-wrap"><div id="downloads-list" class="grid"></div></div>
-  <p class="hint">OK pour regarder · OK maintenu : options (supprimer) · L’icône dossier regroupe les épisodes · RETOUR accueil</p>
+  <div class="list-wrap">
+    <div class="dl-head"><span id="dl-count"></span><span class="scan-status" id="dl-scan"></span></div>
+    <div id="downloads-list" class="grid"></div>
+  </div>
+  <p class="hint">OK pour regarder · OK maintenu : options (supprimer) · L’icône dossier regroupe les épisodes · RETOUR catalogue</p>
 </section>
 
 <section id="files" class="screen">
@@ -113,7 +128,7 @@
 <section id="profiles" class="screen">
   <div class="pf-center">
     <h2 class="pf-title">Qui regarde ?</h2>
-    <p class="pf-sub">GAUCHE / DROITE choisir · OK pour regarder · BAS modifier le profil · RETOUR accueil</p>
+    <p class="pf-sub">GAUCHE / DROITE choisir · OK pour regarder · BAS modifier le profil · RETOUR revenir</p>
     <div class="pf-list" id="profiles-list"></div>
   </div>
 </section>
@@ -194,6 +209,7 @@
 <script src="js/c411.js"></script>
 <script src="js/posters.js"></script>
 <script src="js/filters.js"></script>
+<script src="js/sections.js"></script>
 <script src="js/paging.js"></script>
 <script src="js/hero.js"></script>
 <script src="js/freebox.js"></script>

@@ -16,15 +16,8 @@ test('paramètres envoyés à c411', () => {
 });
 
 test('types proposés : sous-catégories vidéo', () => {
-  assert.deepEqual(plain(app.FILTER_TYPES.map((t) => t.label)), ['Tout', 'Films', 'Séries', 'Animation', 'Documentaires', 'Pour vous', 'Suivi', 'En attente']);
+  assert.deepEqual(plain(app.FILTER_TYPES.map((t) => t.label)), ['Tout', 'Films', 'Séries', 'Animation', 'Documentaires']);
   assert.equal(app.FILTER_TYPES.find((t) => t.label === 'Animation').subcat, '1,2', 'films et séries d\'animation');
-});
-
-test('mode « En attente »', () => {
-  assert.equal(app.isLaterMode({ subcat: 'later' }), true);
-  assert.equal(app.isLaterMode({ subcat: 'follow' }), false);
-  assert.equal(app.isLaterMode(app.emptyFilters()), false);
-  assert.equal(app.isLaterMode(null), false);
 });
 
 test('années de la plus récente à la plus ancienne', () => {

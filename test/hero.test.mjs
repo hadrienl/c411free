@@ -17,6 +17,18 @@ test('élément du bandeau à partir d\'une fiche c411', () => {
   assert.equal(app.heroItemFromDetail('x', null), null);
 });
 
+test('sélection mémorisée : utilisable si non vide et de moins d\'une semaine', () => {
+  const NOW = 1_800_000_000_000, DAY = 86_400_000;
+  const items = [{ infoHash: 'a', title: 'Fracture' }];
+  assert.equal(app.heroCacheUsable({ at: NOW - DAY, items }, NOW), true);
+  assert.equal(app.heroCacheUsable({ at: NOW - 6 * DAY, items }, NOW), true);
+  assert.equal(app.heroCacheUsable({ at: NOW - 8 * DAY, items }, NOW), false, 'trop ancienne');
+  assert.equal(app.heroCacheUsable({ at: NOW, items: [] }, NOW), false, 'sélection vide');
+  assert.equal(app.heroCacheUsable({ items }, NOW), false, 'sans horodatage : considérée trop ancienne');
+  assert.equal(app.heroCacheUsable({ at: NOW }, NOW), false);
+  assert.equal(app.heroCacheUsable(null, NOW), false);
+});
+
 test('ligne d\'infos et navigation circulaire', () => {
   assert.equal(app.heroMeta({ year: '2025', rating: 7.84, isSeries: true, genres: ['Drame', 'Crime'] }), '2025 · ★ 7.8 · Série · Drame, Crime');
   assert.equal(app.heroMeta({ year: '', rating: 0, isSeries: false, genres: [] }), '');
@@ -25,4 +37,13 @@ test('ligne d\'infos et navigation circulaire', () => {
   assert.equal(app.heroStepIndex(0, 8, -1), 7);
   assert.equal(app.heroStepIndex(0, 0, 1), 0);
   assert.equal(app.heroBackdrop('https://image.tmdb.org/t/p/w780/a.jpg'), 'https://image.tmdb.org/t/p/w1280/a.jpg');
+});
+
+test('animation du bandeau : repli/déploiement sur l\'accueil, bascule immédiate ailleurs', () => {
+  assert.equal(app.heroTransition(true, true, true), 'none', 'pas de changement');
+  assert.equal(app.heroTransition(false, false, true), 'none');
+  assert.equal(app.heroTransition(true, false, true), 'collapse', 'visible → masqué, sur l\'accueil : se replie');
+  assert.equal(app.heroTransition(false, true, true), 'expand', 'masqué → visible, sur l\'accueil : se redéploie');
+  assert.equal(app.heroTransition(true, false, false), 'immediate', 'hors accueil : bascule sans animation');
+  assert.equal(app.heroTransition(false, true, false), 'immediate');
 });

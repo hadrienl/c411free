@@ -6,13 +6,17 @@ function show(screen, focusEl) {
   if (current && current.id && current.hasAttribute('data-f')) state.lastFocus[state.screen] = current.id;
   document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('active', s.id === screen); });
   state.screen = screen;
+  document.body.dataset.screen = screen; // l'en-tête n'est visible que sur l'accueil et la Bibliothèque (CSS)
   if (screen !== 'downloads') stopPolling();
   var target = focusEl || (state.lastFocus[screen] && $(state.lastFocus[screen])) || focusables()[0];
   if (target) { target.focus(); target.scrollIntoView({ block: 'nearest' }); }
 }
 
 function focusables() {
-  var scope = pickerOpen() ? '#picker [data-f]' : modalOpen() ? '#modal [data-f]' : '.screen.active [data-f]';
+  // L'en-tête est hors des écrans : ses boutons s'ajoutent à ceux de l'écran affiché (il est masqué ailleurs).
+  // Le panneau de filtres est une surcouche modale (au-dessus du bandeau et de la grille) : ouvert, seuls ses
+  // propres boutons sont atteignables ; GAUCHE/DROITE/HAUT/BAS restent dedans, RETOUR le referme (backFromCatalog).
+  var scope = pickerOpen() ? '#picker [data-f]' : modalOpen() ? '#modal [data-f]' : filtersOpen() ? '#filters [data-f]' : '.screen.active [data-f], #topbar [data-f]';
   if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show, #skip-intro.show';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) {
     return el.offsetParent !== null && !el.closest('.drawer:not(.open)'); // tiroir fermé : ses boutons ne sont pas sélectionnables
@@ -25,6 +29,11 @@ function move(dir, only) {
   if (only) list = list.filter(function (el) { return el.matches(only); });
   var cur = document.activeElement;
   if (list.indexOf(cur) < 0) { if (list[0]) list[0].focus(); return; }
+  // ◀ ▶ dans l'en-tête restent dans l'en-tête : le bandeau, pleine largeur et posé derrière lui, chevauche les trois
+  // rangées et l'emporterait sur un bouton en bout de rangée (« En attente » ▶ tombait sur le bandeau, pas sur Filtres)
+  if (!only && (dir === 'left' || dir === 'right') && cur.closest('#topbar')) {
+    list = list.filter(function (el) { return el.closest('#topbar'); });
+  }
   var others = list.filter(function (el) { return el !== cur; });
   var index = spatialPick(cur.getBoundingClientRect(), others.map(function (el) { return el.getBoundingClientRect(); }), dir);
   var best = others[index];
@@ -128,15 +137,97 @@ document.addEventListener('keydown', function (e) {
       break;
     case KEY.BACK:
       e.preventDefault();
-      if (state.screen === 'home' && filtersOpen()) toggleFilters(false); // RETOUR ferme d'abord le tiroir des filtres
-      else if (scrollListToTop()) { /* liste défilée : remontée en haut, on reste sur l'écran */ }
-      else if (state.screen === 'home') tizen.application.getCurrentApplication().exit();
+      if (state.screen === 'home') backFromCatalog();
+      else if (state.screen === 'downloads') backFromLibrary();
       else if (state.screen === 'detail') show(state.detailFrom);
       else if (state.screen === 'files') openDownloads();
       else if (state.screen === 'profile-edit') cancelProfileForm();
+      else if (state.section === 'library') openDownloads();
       else show('home');
       break;
   }
+});
+
+// ---------- En-tête : sections, sous-onglets, recherche ----------
+// Hauteur de l'en-tête superposé, lue une fois dans --topbar-h (app.css)
+var topbarPx = null;
+function topbarHeight() {
+  if (topbarPx == null) topbarPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h'), 10) || 0;
+  return topbarPx;
+}
+
+// Met l'en-tête en accord avec l'état : section et sous-onglet sélectionnés, rangée 3 affichée,
+// compteur des filtres et libellé de la barre de recherche.
+function renderTopbar() {
+  var section = state.section, tab = currentTab();
+  document.querySelectorAll('#topbar [data-section]').forEach(function (el) {
+    el.classList.toggle('selected', el.getAttribute('data-section') === section);
+  });
+  $('catalog-tabs').classList.toggle('off', section !== 'catalog');
+  $('library-tabs').classList.toggle('off', section !== 'library');
+  document.querySelectorAll('#topbar [data-tab]').forEach(function (el) {
+    el.classList.toggle('selected', el.getAttribute('data-tab') === tab);
+  });
+  var n = activeFilterCount(state.filters);
+  $('open-filters').innerHTML = FILTER_ICON + '<span>Filtres</span>' + (n ? '<span class="count">' + n + '</span>' : '');
+  var q = state.query[section];
+  $('search-label').textContent = q || searchPlaceholder(section, tab);
+  $('search-box').classList.toggle('has-query', !!q);
+}
+
+// Changement de section : chacune garde son sous-onglet et sa recherche ; le focus reste sur le segment choisi
+function setSection(section) {
+  if (section === 'library') { openDownloads($('sec-library')); return; }
+  state.section = 'catalog';
+  renderTopbar();
+  show('home', $('sec-catalog'));
+  refreshHome(true);
+}
+
+// Changement de sous-onglet : la recherche en cours est conservée et s'applique au nouvel onglet
+function setTab(tab, focusSegment) {
+  if (tab !== 'follow') state.seriesOpen = null;
+  state.tab[state.section] = tab;
+  renderTopbar();
+  if (state.section === 'library') { renderDownloads(); $('downloads-list').parentNode.scrollTop = 0; }
+  else refreshHome(true);
+  if (focusSegment && $('tab-' + tab)) $('tab-' + tab).focus();
+}
+
+// Recherche validée : elle ne vaut que pour la section affichée (une requête vide l'efface)
+function runSearch(q) {
+  state.query[state.section] = q;
+  renderTopbar();
+  if (state.section === 'library') { renderDownloads(); $('downloads-list').parentNode.scrollTop = 0; }
+  else refreshHome(true);
+}
+
+// RETOUR sur le Catalogue : recherche, série ouverte, haut de la liste, onglet Accueil, puis sortie de l'app
+function backFromCatalog() {
+  if (filtersOpen()) toggleFilters(false); // RETOUR referme d'abord le panneau de filtres
+  else if (state.query.catalog) runSearch('');
+  else if (state.seriesOpen != null) { state.seriesOpen = null; refreshHome(true); }
+  else if (scrollListToTop()) { /* liste défilée : remontée en haut, on reste sur l'écran */ }
+  else if (currentTab() !== 'home') setTab('home', true);
+  else tizen.application.getCurrentApplication().exit();
+}
+
+// RETOUR sur la Bibliothèque : recherche, haut de la liste, puis retour au Catalogue
+function backFromLibrary() {
+  if (state.query.library) runSearch('');
+  else if (scrollListToTop()) { /* liste défilée : remontée en haut */ }
+  else setSection('catalog');
+}
+
+$('sections').addEventListener('click', function (e) {
+  var seg = e.target.closest('[data-section]');
+  if (seg) setSection(seg.getAttribute('data-section'));
+});
+document.querySelectorAll('#catalog-tabs, #library-tabs').forEach(function (row) {
+  row.addEventListener('click', function (e) {
+    var seg = e.target.closest('[data-tab]');
+    if (seg) setTab(seg.getAttribute('data-tab'));
+  });
 });
 
 // ---------- Défilement animé ----------
@@ -170,15 +261,15 @@ function reveal(el) {
   var elTop = r.top - w.top + wrap.scrollTop, elBottom = r.bottom - w.top + wrap.scrollTop;
   // Sur l'accueil et les Médias, le header est superposé à la zone défilante. Sa hauteur ne fait donc pas
   // partie de la zone réellement visible : une rangée sélectionnée doit rester entièrement sous les boutons.
-  var screen = wrap.closest('.screen'), top = screen && screen.querySelector('.top');
-  var topInset = top && (screen.id === 'home' || screen.id === 'downloads')
-    ? Math.max(0, top.getBoundingClientRect().bottom - w.top)
-    : 0;
+  var screen = wrap.closest('.screen');
+  // L'en-tête est superposé à la zone défilante : une rangée sélectionnée doit rester entièrement dessous
+  var topInset = screen && (screen.id === 'home' || screen.id === 'downloads') ? Math.max(0, topbarHeight() - w.top) : 0;
   // Positions dans le contenu (indépendantes du défilement) ; animation en cours : on raisonne depuis sa cible
   var base = wrap.scrollTarget != null ? wrap.scrollTarget : wrap.scrollTop;
   var target = scrollTargetBelowInset(elTop, elBottom, base, wrap.clientHeight, topInset, SCROLL_MARGIN_PX);
   // En quittant le bandeau, sa portion restante demeure derrière le header plutôt que de masquer la première rangée.
-  var hero = wrap.querySelector('#hero:not(.off)');
+  // « collapsed » aussi : un bandeau en cours de repli a une hauteur nulle, comme s'il n'était plus là
+  var hero = wrap.querySelector('#hero:not(.off):not(.collapsed)');
   if (target != null && hero && el !== hero) {
     var heroBottom = hero.getBoundingClientRect().bottom - w.top + wrap.scrollTop;
     if (target > 0 && target < heroBottom) target = Math.min(heroBottom, elTop - topInset - SCROLL_MARGIN_PX);

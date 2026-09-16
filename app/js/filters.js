@@ -4,28 +4,22 @@
 var GENRES_KEY = 'c411free.genres';
 var GENRES_MAX_AGE = 7 * 24 * 3600 * 1000;
 var FILTER_MIN_YEAR = 1920;
+// Sous-catégories vidéo de c411 : les seuls types envoyés à l'API
 var FILTER_TYPES = [
   { subcat: '', label: 'Tout' },
   { subcat: '6', label: 'Films' },
   { subcat: '7', label: 'Séries' },
   { subcat: '1,2', label: 'Animation' },
-  { subcat: '4,57', label: 'Documentaires' },
-  { subcat: 'foryou', label: 'Pour vous' }, // recommandations du profil (pas un filtre c411)
-  { subcat: 'follow', label: 'Suivi' },     // séries regardées et leurs nouveaux épisodes (pas un filtre c411)
-  { subcat: 'later', label: 'En attente' }  // file d'attente « plus tard » (pas un filtre c411)
+  { subcat: '4,57', label: 'Documentaires' }
 ];
 
-function isFollowMode(f) { return !!f && f.subcat === 'follow'; }
-function isForYouMode(f) { return !!f && f.subcat === 'foryou'; }
-function isLaterMode(f) { return !!f && f.subcat === 'later'; }
 var FILTER_ICON = '<svg class="ico" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>';
 
 function emptyFilters() { return { subcat: '', year: '', genre: '' }; }
 
 // Paramètres ajoutés à /api/torrents (les valeurs vides sont ignorées par c411())
 function filterParams(f) {
-  // Seules les vraies sous-catégories (« 6 », « 1,2 ») partent vers c411 ; « Pour vous » et « Suivi » sont des modes de l'app
-  return { subcat: (f && /^[\d,]+$/.test(f.subcat || '') ? f.subcat : ''), year: (f && f.year) || '', options: (f && f.genre) || '' };
+  return { subcat: (f && f.subcat) || '', year: (f && f.year) || '', options: (f && f.genre) || '' };
 }
 
 function activeFilterCount(f) {

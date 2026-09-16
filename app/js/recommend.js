@@ -316,12 +316,16 @@ async function loadForYou(force) {
     if (!result.cold) saveRecos(result);
     debug('info', 'recommandations calculées', { titres: result.items.length, historique: (result.basedOn || []).length, ms: Date.now() - started });
   }
-  if (generation !== forYouGeneration || !isForYouMode(state.filters)) return;
+  if (generation !== forYouGeneration || !onCatalogTab('foryou')) return;
   if (result.cold) { loadForYouCold(generation); return; }
-  home.items = result.items.map(function (x) { return x.release; });
+  // La recherche filtre les recommandations déjà calculées
+  var q = state.query.catalog;
+  var shown = result.items.filter(function (x) { return keepCatalogItem(x.release); });
+  home.items = shown.map(function (x) { return x.release; });
   var based = result.basedOn.slice(0, 3).join(', ') + (result.basedOn.length > 3 ? '…' : '');
   grid.innerHTML = '<div class="reco-intro">Sélection pour ' + esc(currentProfile().name) + ', d\'après ' + esc(based) + '</div>'
-    + (result.items.map(function (x) { return cardHtml('h-', x.release, x.reason); }).join('') || '<div class="empty">Aucune recommandation pour le moment.</div>');
+    + (shown.map(function (x) { return cardHtml('h-', x.release, x.reason); }).join('') || '<div class="empty">Aucune recommandation pour le moment.</div>');
+  renderHomeTitle(q ? resultsLabel(shown.length, q) : '', q ? 'RETOUR effacer la recherche' : '');
 }
 
 // Profil sans historique : explication, et les titres les plus partagés en attendant
@@ -331,9 +335,11 @@ async function loadForYouCold(generation) {
   grid.innerHTML = intro;
   try {
     var j = await c411('/api/torrents', { category: 1, subcat: RECO_SUBCATS, sortBy: 'seeders', sortOrder: 'desc', perPage: PER_PAGE, page: 1 });
-    if (generation !== forYouGeneration || !isForYouMode(state.filters)) return;
-    state.home.items = j.data || [];
+    if (generation !== forYouGeneration || !onCatalogTab('foryou')) return;
+    var q = state.query.catalog;
+    state.home.items = (j.data || []).filter(keepCatalogItem);
     grid.innerHTML = intro + state.home.items.map(function (t) { return cardHtml('h-', t); }).join('');
+    renderHomeTitle(q ? resultsLabel(state.home.items.length, q) : '', q ? 'RETOUR effacer la recherche' : '');
   } catch (e) {
     toast('Impossible de charger les titres populaires : ' + e.message, true);
   }
