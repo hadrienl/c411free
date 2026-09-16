@@ -15,7 +15,6 @@ function toggleFilters(open) {
   clearTimeout(filtersSettleTimer);
   drawer.classList.remove('settled');
   drawer.classList.toggle('open', open);
-  updateHeroVisibility(); // le panneau prend la place du bandeau
   if (!open) { $('open-filters').focus(); return; }
   // Débordement autorisé une fois ouvert, pour que le halo des boutons sélectionnés ne soit pas coupé
   filtersSettleTimer = setTimeout(function () { drawer.classList.add('settled'); }, FILTERS_ANIM_MS);

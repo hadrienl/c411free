@@ -38,3 +38,12 @@ test('ligne d\'infos et navigation circulaire', () => {
   assert.equal(app.heroStepIndex(0, 0, 1), 0);
   assert.equal(app.heroBackdrop('https://image.tmdb.org/t/p/w780/a.jpg'), 'https://image.tmdb.org/t/p/w1280/a.jpg');
 });
+
+test('animation du bandeau : repli/déploiement sur l\'accueil, bascule immédiate ailleurs', () => {
+  assert.equal(app.heroTransition(true, true, true), 'none', 'pas de changement');
+  assert.equal(app.heroTransition(false, false, true), 'none');
+  assert.equal(app.heroTransition(true, false, true), 'collapse', 'visible → masqué, sur l\'accueil : se replie');
+  assert.equal(app.heroTransition(false, true, true), 'expand', 'masqué → visible, sur l\'accueil : se redéploie');
+  assert.equal(app.heroTransition(true, false, false), 'immediate', 'hors accueil : bascule sans animation');
+  assert.equal(app.heroTransition(false, true, false), 'immediate');
+});

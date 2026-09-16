@@ -13,8 +13,10 @@ function show(screen, focusEl) {
 }
 
 function focusables() {
-  // L'en-tête est hors des écrans : ses boutons s'ajoutent à ceux de l'écran affiché (il est masqué ailleurs)
-  var scope = pickerOpen() ? '#picker [data-f]' : modalOpen() ? '#modal [data-f]' : '.screen.active [data-f], #topbar [data-f]';
+  // L'en-tête est hors des écrans : ses boutons s'ajoutent à ceux de l'écran affiché (il est masqué ailleurs).
+  // Le panneau de filtres est une surcouche modale (au-dessus du bandeau et de la grille) : ouvert, seuls ses
+  // propres boutons sont atteignables ; GAUCHE/DROITE/HAUT/BAS restent dedans, RETOUR le referme (backFromCatalog).
+  var scope = pickerOpen() ? '#picker [data-f]' : modalOpen() ? '#modal [data-f]' : filtersOpen() ? '#filters [data-f]' : '.screen.active [data-f], #topbar [data-f]';
   if (state.screen === 'player') scope = menuOpen() ? '#track-menu [data-f]' : '#controls [data-f], #seekbar, #next-episode.show, #skip-intro.show';
   return Array.prototype.filter.call(document.querySelectorAll(scope), function (el) {
     return el.offsetParent !== null && !el.closest('.drawer:not(.open)'); // tiroir fermé : ses boutons ne sont pas sélectionnables
@@ -27,6 +29,11 @@ function move(dir, only) {
   if (only) list = list.filter(function (el) { return el.matches(only); });
   var cur = document.activeElement;
   if (list.indexOf(cur) < 0) { if (list[0]) list[0].focus(); return; }
+  // ◀ ▶ dans l'en-tête restent dans l'en-tête : le bandeau, pleine largeur et posé derrière lui, chevauche les trois
+  // rangées et l'emporterait sur un bouton en bout de rangée (« En attente » ▶ tombait sur le bandeau, pas sur Filtres)
+  if (!only && (dir === 'left' || dir === 'right') && cur.closest('#topbar')) {
+    list = list.filter(function (el) { return el.closest('#topbar'); });
+  }
   var others = list.filter(function (el) { return el !== cur; });
   var index = spatialPick(cur.getBoundingClientRect(), others.map(function (el) { return el.getBoundingClientRect(); }), dir);
   var best = others[index];
@@ -261,7 +268,8 @@ function reveal(el) {
   var base = wrap.scrollTarget != null ? wrap.scrollTarget : wrap.scrollTop;
   var target = scrollTargetBelowInset(elTop, elBottom, base, wrap.clientHeight, topInset, SCROLL_MARGIN_PX);
   // En quittant le bandeau, sa portion restante demeure derrière le header plutôt que de masquer la première rangée.
-  var hero = wrap.querySelector('#hero:not(.off)');
+  // « collapsed » aussi : un bandeau en cours de repli a une hauteur nulle, comme s'il n'était plus là
+  var hero = wrap.querySelector('#hero:not(.off):not(.collapsed)');
   if (target != null && hero && el !== hero) {
     var heroBottom = hero.getBoundingClientRect().bottom - w.top + wrap.scrollTop;
     if (target > 0 && target < heroBottom) target = Math.min(heroBottom, elTop - topInset - SCROLL_MARGIN_PX);

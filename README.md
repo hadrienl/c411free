@@ -89,6 +89,7 @@ Variables utiles : `TV_IP` (sinon lue dans `secrets/local.env`), `LOG_HOST` (IP 
 - `node tools/freebox.mjs list|files|add|stats` : diagnostic du téléchargeur Freebox.
 - `node tools/c411.mjs caps|search|grab` : diagnostic de l'API c411.
 - `node tools/tv-remote.mjs KEY_…` : télécommande réseau Samsung.
+- `npm run chrome` : lance l'app dans Google Chrome sur le Mac (1920×1080), avec la vraie configuration et un shim pour le clavier et les API Tizen — pratique pour développer sans repasser par la TV.
 
 ## Points techniques à connaître
 

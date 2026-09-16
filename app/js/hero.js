@@ -4,6 +4,10 @@
 
 var HERO_INTERVAL_MS = 8000;
 var HERO_MAX = 8;
+// Durée de l'animation de repli/déploiement du bandeau : doit rester égale à FILTERS_ANIM_MS (catalog.js),
+// la même durée que le tiroir de filtres, pour que les deux animations restent synchronisées.
+var HERO_ANIM_MS = 380;
+var heroHideTimer = null;
 // Dernière sélection reçue de c411, mémorisée sur la TV (commune à tous les profils) : /api/homepage renvoie
 // souvent une sélection vide au lancement, le bandeau serait sinon absent jusqu'aux nouveaux essais.
 var HERO_KEY = 'c411free.hero';
@@ -143,20 +147,69 @@ function heroStep(step) {
   renderHero();
 }
 
-// Passage automatique, sauf si le bandeau est sélectionné, masqué, ou si l'accueil n'est pas affiché
+// Passage automatique, sauf si le bandeau est sélectionné, masqué (ou en train de se replier), couvert par le
+// panneau de filtres, ou si l'accueil n'est pas affiché
 function startHeroTimer() {
   clearInterval(state.hero.timer);
   state.hero.timer = setInterval(function () {
-    if (state.screen !== 'home' || document.hidden || document.activeElement === $('hero') || $('hero').classList.contains('off')) return;
+    var hero = $('hero');
+    if (state.screen !== 'home' || document.hidden || document.activeElement === hero
+      || hero.classList.contains('off') || hero.classList.contains('collapsed') || filtersOpen()) return;
     heroStep(1);
   }, HERO_INTERVAL_MS);
 }
 
-// Visible seulement sur l'accueil du Catalogue, hors recherche (ailleurs, la place revient aux résultats)
+// Détermine l'animation à jouer selon l'état du bandeau avant/après et l'écran affiché ; fonction pure, testée
+// isolément. 'collapse' (se replie avant de passer à off), 'expand' (se redéploie), 'immediate' (bascule sans
+// attendre, hors accueil), 'none' (rien ne change).
+function heroTransition(visibleBefore, visibleAfter, onHome) {
+  if (visibleBefore === visibleAfter) return 'none';
+  if (!onHome) return 'immediate';
+  return visibleAfter ? 'expand' : 'collapse';
+}
+
+// Visible seulement sur l'accueil du Catalogue, hors recherche et filtre actif (le panneau de filtres, lui,
+// est une surcouche qui ne masque plus le bandeau : ailleurs, la place revient aux résultats).
+// hero-off (qui rend sa place à la grille) est posé/retiré DÈS le début du repli/déploiement, en même temps
+// que collapsed : la grille glisse en un seul mouvement, synchronisé avec le bandeau (même durée/courbe).
+// Le minuteur ne sert plus qu'à poser off (display: none) une fois le bandeau devenu invisible.
 function updateHeroVisibility() {
-  var visible = state.hero.items.length > 0 && onCatalogTab('home') && !state.query.catalog && !activeFilterCount(state.filters) && !filtersOpen();
+  var visible = state.hero.items.length > 0 && onCatalogTab('home') && !state.query.catalog && !activeFilterCount(state.filters);
   var hero = $('hero');
   if (!visible && document.activeElement === hero && $('tab-' + currentTab())) $('tab-' + currentTab()).focus();
+
+  // « collapsed » sans « off » : repli en cours, pas encore pleinement masqué. Compte comme non-visible, sinon
+  // une réouverture pendant les 380 ms serait vue comme « aucun changement » et laisserait le minuteur en cours
+  // ajouter « off » malgré tout.
+  var visibleBefore = !hero.classList.contains('off') && !hero.classList.contains('collapsed');
+  var transition = heroTransition(visibleBefore, visible, state.screen === 'home');
+  if (transition === 'none') return;
+
+  if (transition === 'collapse') {
+    clearTimeout(heroHideTimer);
+    hero.classList.add('collapsed');
+    hero.parentNode.classList.add('hero-off');
+    heroHideTimer = setTimeout(function () {
+      hero.classList.add('off');
+      heroHideTimer = null;
+    }, HERO_ANIM_MS);
+    return;
+  }
+
+  if (transition === 'expand') {
+    clearTimeout(heroHideTimer);
+    heroHideTimer = null;
+    hero.classList.remove('off');
+    void hero.offsetWidth; // force le reflow : sinon retirer collapsed/hero-off juste après off ne relance pas les transitions
+    hero.classList.remove('collapsed');
+    hero.parentNode.classList.remove('hero-off');
+    return;
+  }
+
+  // 'immediate' : écran autre que l'accueil, pas d'animation invisible à attendre
+  clearTimeout(heroHideTimer);
+  heroHideTimer = null;
+  hero.classList.remove('collapsed');
   hero.classList.toggle('off', !visible);
   hero.parentNode.classList.toggle('hero-off', !visible);
 }

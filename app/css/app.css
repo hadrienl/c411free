@@ -292,8 +292,10 @@ html.playing #ambient { display: none; }
 /* Affiches du catalogue : apparition en fondu une fois chargées (pas de flash pendant le défilement) */
 .poster img.fade { opacity: 0; transition: opacity .35s ease; }
 .poster img.fade.on { opacity: 1; }
-/* Retour en haut d'une longue liste : fondu enchaîné */
-.grid-wrap, .list-wrap { transition: opacity .2s ease; }
+/* Retour en haut d'une longue liste : fondu enchaîné. padding-top est là pour #home > .grid-wrap (bandeau
+   d'accueil, cf. plus bas) : regroupé ici pour ne pas écraser la transition d'opacity (une seule règle de
+   spécificité plus élevée sur .grid-wrap remplacerait toute la propriété transition, pas seulement l'ajout). */
+.grid-wrap, .list-wrap { transition: opacity .2s ease, padding-top .38s cubic-bezier(.2, .8, .2, 1); }
 .grid-wrap.fade-out, .list-wrap.fade-out { opacity: 0; }
 
 /* ---------- Profils ---------- */
@@ -344,15 +346,20 @@ html.playing #ambient { display: none; }
 
 /* ---------- Bandeau d'accueil (exclusivités populaires) ---------- */
 /* Le bandeau occupe l'écran dès y = 0. L'en-tête, sorti du flux, reste posé par-dessus à sa position habituelle.
-   Le tiroir ouvert récupère seul la place nécessaire sous les boutons. */
+   Le tiroir de filtres est une surcouche (position absolute) : son ouverture/fermeture ne déplace jamais la
+   zone défilante ni le bandeau qu'elle contient. */
 #home { padding-top: 0; }
-/* Sans bandeau, la grille commence sous l'en-tête ; le panneau de filtres ouvert prend cette place et la grille le suit */
+/* Sans bandeau, la grille commence sous l'en-tête ; animée en même temps que le repli/déploiement du bandeau
+   (voir hero.js : hero-off est posé/retiré au même instant que collapsed, pas à la fin). La transition de
+   padding-top est déclarée plus haut, sur la règle commune .grid-wrap, .list-wrap. */
 #home > .grid-wrap.hero-off { padding-top: var(--topbar-h); }
-#home > .drawer.open { margin-top: var(--topbar-h); }
-#home > .drawer.open + .grid-wrap { padding-top: 34px; }
 /* Pleine largeur en tête de la zone défilante : il disparaît en douceur quand on descend dans la grille */
 /* Hauteur liée à l’en-tête : son contenu (calé en bas) doit rester sous les trois rangées */
-#hero { position: relative; height: calc(var(--topbar-h) + 460px); margin: -34px -80px 40px; overflow: hidden; outline: none; transition: box-shadow .2s; }
+#hero { position: relative; height: calc(var(--topbar-h) + 460px); margin: -34px -80px 40px; overflow: hidden; outline: none;
+  transition: box-shadow .2s, height .38s cubic-bezier(.2, .8, .2, 1), margin-bottom .38s cubic-bezier(.2, .8, .2, 1), opacity .25s ease; }
+/* Étape intermédiaire pendant l'ouverture/fermeture du tiroir de filtres (mêmes durée et courbe que .drawer.open) :
+   le bandeau se réduit avant de disparaître (« off »), ou se redéploie après être réapparu. */
+#hero.collapsed { height: 0; opacity: 0; margin-bottom: 0; }
 #hero.off { display: none; }
 #hero .hero-img { position: absolute; inset: 0; background-size: cover; background-position: center 22%; opacity: 0; transition: opacity 1.1s ease; }
 #hero .hero-img.on { opacity: 1; }
@@ -379,14 +386,18 @@ html.playing #ambient { display: none; }
 .spinner { width: 34px; height: 34px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, .18); border-top-color: #93c5fd; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- Filtres : tiroir animé entre l'en-tête et les vignettes ---------- */
+/* ---------- Filtres : tiroir en surcouche au-dessus du bandeau et de la grille ---------- */
 .btn .ico { width: 30px; height: 30px; fill: currentColor; vertical-align: -5px; }
 .btn .count { display: inline-block; min-width: 38px; margin-left: 2px; padding: 0 10px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 24px; line-height: 38px; text-align: center; vertical-align: 3px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45); }
-.drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); margin-bottom: 0; transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin .38s ease; }
-.drawer.open { grid-template-rows: 1fr; opacity: 1; transform: none; margin-bottom: 18px; }
+/* Position absolue (sous #topbar, z-index 12, et au-dessus de la zone défilante) : la grille ne bouge jamais
+   quand le panneau s'ouvre ou se ferme, seul le bandeau (lui, animé indépendamment) peut se replier derrière. */
+#home > .drawer { position: absolute; top: var(--topbar-h); left: 80px; right: 80px; z-index: 11; }
+.drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1); }
+.drawer.open { grid-template-rows: 1fr; opacity: 1; transform: none; }
 .drawer-inner { min-height: 0; overflow: hidden; margin: 0 -24px; padding: 0 24px; }
 .drawer.settled .drawer-inner { overflow: visible; }
-.drawer-panel { display: flex; flex-direction: column; gap: 20px; margin: 10px 0 14px; padding: 24px 30px; border-radius: 30px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(16, 24, 46, .42); box-shadow: var(--glass-inner), var(--glass-drop); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+/* Fond renforcé : le panneau est maintenant posé par-dessus le bandeau et les affiches, pas seulement l'en-tête */
+.drawer-panel { display: flex; flex-direction: column; gap: 20px; margin: 10px 0 14px; padding: 24px 30px; border-radius: 30px; border: 1.5px solid var(--glass-edge); background: var(--glass), rgba(16, 24, 46, .74); box-shadow: var(--glass-inner), var(--glass-drop); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 .filter-row { display: flex; align-items: center; gap: 18px; }
 .filter-label { min-width: 120px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
 .filter-label.second { min-width: 0; margin-left: 26px; }
