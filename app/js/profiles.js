@@ -129,22 +129,21 @@ function applyProfileChange() {
   ensureSeriesBackfill();
   ensureHistoryBackfill();
   state.follow.list = [];
+  state.seriesOpen = null;
   forgetLater();
-  if (isFollowMode(state.filters)) loadFollowed();
-  if (isForYouMode(state.filters)) loadForYou();
-  if (isLaterMode(state.filters)) loadLaterList();
+  if (state.screen === 'home') refreshHome(true);
   debug('info', 'profil sélectionné', { id: loadProfiles().currentId });
 }
 
 function chooseProfile(id) {
-  var p = loadProfiles();
-  if (id !== p.currentId) {
-    p.currentId = id;
-    saveProfiles(p);
-    applyProfileChange();
-    toast('Bonjour ' + currentProfile().name + ' !');
-  }
-  show('home');
+  var p = loadProfiles(), changed = id !== p.currentId;
+  if (changed) { p.currentId = id; saveProfiles(p); }
+  state.section = 'catalog';
+  renderTopbar();
+  show('home'); // l'accueil avant le rafraîchissement : applyProfileChange recharge la grille affichée
+  if (!changed) return;
+  applyProfileChange();
+  toast('Bonjour ' + currentProfile().name + ' !');
 }
 
 function openProfileForm(mode, id) {

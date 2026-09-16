@@ -6,10 +6,10 @@ const fresh = () => loadApp(['core.js', 'profiles.js', 'storage.js', 'later.js']
 
 test('ajout puis présent dans la file, idempotent', () => {
   const app = fresh();
-  const item = { infoHash: 'ABCDEF', name: 'Film.2020.1080p', size: 42, seeders: 3, language: 'fr', posterUrl: '/p.jpg' };
+  const item = { infoHash: 'ABCDEF', name: 'Film.2020.1080p', size: 42, seeders: 3, language: 'fr', posterUrl: '/p.jpg', subcategory: { id: 6 } };
   assert.equal(app.isLater(item.infoHash), false);
   const saved = app.addLater(item, 1000);
-  assert.deepEqual(plain(saved), { name: item.name, size: 42, seeders: 3, language: 'fr', posterUrl: '/p.jpg', at: 1000 });
+  assert.deepEqual(plain(saved), { name: item.name, size: 42, seeders: 3, language: 'fr', posterUrl: '/p.jpg', subcategory: 6, at: 1000 });
   assert.equal(app.isLater(item.infoHash), true);
   assert.equal(app.isLater('abcdef'), true, 'insensible à la casse');
   app.addLater(item, 2000); // idempotent : même clé, juste ré-écrite

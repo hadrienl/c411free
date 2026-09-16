@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1920, "h": 1080, "title": "Accueil" },
+    { "file": "Filtres.dc.html", "x": 2040, "y": 0, "w": 1920, "h": 1080, "title": "Accueil - filtres ouverts" },
+    { "file": "Bibliotheque.dc.html", "x": 0, "y": 1240, "w": 1920, "h": 1080, "title": "Bibliotheque" },
+    { "file": "PourVous.dc.html", "x": 2040, "y": 1240, "w": 1920, "h": 1080, "title": "Pour vous" }
+  ],
+  "annotations": [
+    { "id": "remote-notes", "x": -360, "y": 0, "w": 300, "text": "Télécommande :\nHAUT depuis la grille → sous-onglets → sections → recherche / profil.\nGAUCHE / DROITE dans une rangée.\nLa recherche porte sur la section : c411 sur Accueil, disques Freebox sur Bibliothèque.\nRETOUR : recherche active → l'efface ; panneau Filtres ouvert → le ferme ; liste défilée → haut ; sous-onglet ≠ Accueil → Accueil ; Accueil → quitter." }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -2,15 +2,18 @@
 
 App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à la télécommande :
 
-- **Catalogue c411** : nouveautés en vignettes, tiroir de filtres (type, année, genre proposés par c411), recherche avec le clavier natif Samsung, fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV).
-- **Profils** (avatar en haut à droite de l'accueil) : chaque membre de la famille a son surnom, son avatar (dix au choix) et ses propres épisodes vus, reprises, séries suivies et préférences de pistes. L'écran « Qui regarde ? » permet de changer de profil, d'en modifier ou d'en ajouter un.
-- **Pour vous** (onglet des filtres) : recommandations propres à chaque profil. Les goûts sont déduits de ce qui a été regardé et jusqu'où (film fini ou abandonné, nombre d'épisodes d'une série), à partir des genres, mots-clés, réalisateurs et acteurs des fiches TMDB de c411. Les propositions viennent de c411, sans ce qui a déjà été vu ou est déjà sur les disques, avec la raison sous chaque vignette.
-- **Suivi des séries** (onglet « Suivi » des filtres) : chaque série regardée est mémorisée avec son dernier épisode vu. L'onglet affiche les séries par dernière sortie, avec leurs nouveautés sur c411 (épisodes suivants, saisons suivantes). Une série ouvre la liste de ses releases, nouveautés en premier.
-- **En attente** (onglet « En attente » des filtres) : sur la fiche d'un titre, « Plus tard » le met de côté sans le télécharger. L'onglet liste ces titres, du plus récent au plus ancien ; le signet disparaît dès que le titre est envoyé à la Freebox.
+- **Deux sections**, dans un en-tête unique à trois rangées (recherche et profil, sections, sous-onglets) : **Catalogue** (ce qu'il y a sur c411) et **Bibliothèque** (ce qui est sur les disques de la Freebox). La rangée de sous-onglets change avec la section.
+- **Recherche contextuelle** : la barre de recherche (clavier natif Samsung) cherche là où l'on se trouve — sur c411 dans le Catalogue, dans la liste affichée pour « Pour vous », « Suivi » et « En attente », parmi les vidéos des disques dans la Bibliothèque. Les résultats remplacent la grille en place, chaque section garde sa recherche, et RETOUR l'efface.
+- **Catalogue** : nouveautés en vignettes (**Accueil**), fiche détaillée (affiche, résumé, distribution, pistes audio compatibles avec la TV). RETOUR referme le panneau de filtres, efface la recherche, remonte la liste, revient à l'Accueil, puis quitte l'app.
+- **Filtres** (bouton à droite de la rangée des sous-onglets) : type, année et genre proposés par c411, dans un panneau qui s'ouvre sous l'en-tête. Ils valent pour tout le Catalogue — nouveautés, recherche, « Pour vous », « En attente » et les releases d'une série suivie. Le genre ne s'applique qu'aux nouveautés et à la recherche : les items de liste ne le portent pas, seule la fiche d'un titre le connaît.
+- **Profils** (avatar en haut à droite) : chaque membre de la famille a son surnom, son avatar (dix au choix) et ses propres épisodes vus, reprises, séries suivies et préférences de pistes. L'écran « Qui regarde ? » permet de changer de profil, d'en modifier ou d'en ajouter un.
+- **Pour vous** (sous-onglet du Catalogue) : recommandations propres à chaque profil. Les goûts sont déduits de ce qui a été regardé et jusqu'où (film fini ou abandonné, nombre d'épisodes d'une série), à partir des genres, mots-clés, réalisateurs et acteurs des fiches TMDB de c411. Les propositions viennent de c411, sans ce qui a déjà été vu ou est déjà sur les disques, avec la raison sous chaque vignette.
+- **Suivi des séries** (sous-onglet du Catalogue) : chaque série regardée est mémorisée avec son dernier épisode vu. L'onglet affiche les séries par dernière sortie, avec leurs nouveautés sur c411 (épisodes suivants, saisons suivantes). Une série ouvre la liste de ses releases en place, nouveautés en premier ; RETOUR revient aux séries suivies.
+- **En attente** (sous-onglet du Catalogue) : sur la fiche d'un titre, « Plus tard » le met de côté sans le télécharger. L'onglet liste ces titres, du plus récent au plus ancien ; le signet disparaît dès que le titre est envoyé à la Freebox.
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Bande-annonce** dans la fiche : MP4 d'AlloCiné lu dans le lecteur de l'app (RETOUR revient à la fiche), sinon ouverture de l'app YouTube de la TV.
 - **Téléchargement** : envoi du .torrent au téléchargeur de la Freebox Ultra.
-- **Médias** : toutes les vidéos des disques de la Freebox, regroupées en films et dossiers d'épisodes, avec la progression des téléchargements en cours, les vidéos déjà vues et la suppression (appui long sur OK).
+- **Bibliothèque** : toutes les vidéos des disques de la Freebox, en sous-onglets **Tout**, **Films** et **Séries**, en vignettes ou en liste, triées au choix (date, nom, taille), avec la progression des téléchargements en cours, les vidéos déjà vues et la suppression (appui long sur OK). Les disques sont réanalysés tout seuls (au plus toutes les 10 min, et à la fin d'un téléchargement).
 - **Lecteur intégré** (AVPlay, décodeur matériel) : pistes audio et sous-titres mémorisés, barre de lecture, reprise là où on s'était arrêté, « Passer le générique » (chapitres du fichier, sinon générique appris en sautant une fois sur un autre épisode de la série), épisode suivant à l'arrivée du générique de fin.
 
 L'app est autonome sur la TV : elle parle directement à c411 et à la Freebox, sans serveur.
@@ -30,9 +33,10 @@ app/                  App TV (Tizen, HTML/JS sans dépendance ni build)
     freebox.js        Session Freebox (HMAC), API, adresses UPnP
     media.js          Index des médias : parcours des disques, regroupement, téléchargements, cibles de suppression
     tracks.js         Logique pure du lecteur : langues, préférences, générique, sous-titres
-    nav.js            Navigation à la télécommande, fenêtre modale, touches
-    catalog.js        Accueil, recherche, fiche, envoi à la Freebox
-    library.js        Écran Médias et liste des fichiers d'un dossier
+    sections.js       Sections, sous-onglets et recherche : état de navigation et fonctions pures
+    nav.js            Navigation à la télécommande, en-tête, fenêtre modale, touches
+    catalog.js        Catalogue : accueil, filtres, recherche, fiche, envoi à la Freebox
+    library.js        Bibliothèque et liste des fichiers d'un dossier
     delete.js         Menu d'une ligne et suppression
     player.js         Lecteur AVPlay
     main.js           Actions des écrans et démarrage
@@ -100,7 +104,7 @@ Variables utiles : `TV_IP` (sinon lue dans `secrets/local.env`), `LOG_HOST` (IP 
 - **Génériques** : AVPlay ne donne accès ni à l'image, ni au son, ni aux chapitres.
   - Les chapitres MKV sont lus directement dans le fichier : environ 1 épisode sur 6 en contient (mesuré sur les disques).
   - Sinon, l'app retient le générique d'une série quand on saute vers l'avant au début d'un épisode : sauts enchaînés dans les 6 premières minutes, totalisant 20 s à 3 min.
-- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.introSkips`, `c411free.series`, `c411free.genres`, `c411free.profiles`.
+- **Données sur la TV** (localStorage) : `c411free.trackPrefs`, `c411free.watched`, `c411free.positions`, `c411free.mediaIndex`, `c411free.posters`, `c411free.mediaView`, `c411free.mediaSort`, `c411free.introSkips`, `c411free.series`, `c411free.genres`, `c411free.hero`, `c411free.profiles`.
   - Données propres à chaque profil : `watched`, `positions`, `trackPrefs` et `series`. Le premier profil garde ces clés telles quelles ; les suivants les suffixent par `@<id>` (ex. `c411free.watched@2`).
 
 ## Licence

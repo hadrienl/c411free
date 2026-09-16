@@ -11,9 +11,10 @@ $('filter-type').addEventListener('click', function (e) {
 $('filter-year').addEventListener('click', pickYear);
 $('filter-genre').addEventListener('click', pickGenre);
 $('filter-reset').addEventListener('click', resetFilters);
-$('dl-sorts').addEventListener('click', function (e) {
-  var btn = e.target.closest('[data-sort-group]');
-  if (btn) pickMediaSort(btn.getAttribute('data-sort-group'));
+$('dl-sort').addEventListener('click', function () { pickMediaSort(); });
+$('dl-views').addEventListener('click', function (e) {
+  var btn = e.target.closest('[data-view]');
+  if (btn) setMediaView(btn.getAttribute('data-view'));
 });
 $('downloads-list').addEventListener('click', function (e) {
   var more = e.target.closest('[data-more-id]');
@@ -28,13 +29,9 @@ $('files-list').addEventListener('click', function (e) {
 $('search-box').addEventListener('click', openSearch);
 $('query').addEventListener('blur', function () { closeSearch(false); });
 // Défilement infini : sélection d'une vignette ou défilement de la liste
-['home-grid', 'results-grid'].forEach(function (id) {
-  $(id).addEventListener('focusin', function () { loadMoreIfNeeded(id); });
-  $(id).parentNode.addEventListener('scroll', function () { loadMoreIfNeeded(id); });
-});
-$('home-grid').addEventListener('click', onGridClick('home'));
-$('results-grid').addEventListener('click', onGridClick('results'));
-$('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
+$('home-grid').addEventListener('focusin', function () { loadMoreIfNeeded('home-grid'); });
+$('home-grid').parentNode.addEventListener('scroll', function () { loadMoreIfNeeded('home-grid'); });
+$('home-grid').addEventListener('click', onGridClick);
 $('d-download').addEventListener('click', startDownload);
 $('d-later').addEventListener('click', toggleLater);
 $('d-trailer').addEventListener('click', function () {
@@ -51,6 +48,9 @@ if (!S.c411ApiKey || !S.freeboxAppToken) toast('Configuration manquante : redép
 ensureSeriesBackfill(); // suivi des séries : reprise de l'historique des épisodes déjà vus
 ensureHistoryBackfill(); // recommandations : historique de visionnage repris des fichiers déjà vus
 renderFilters();
+renderTopbar();
+renderSortButton();
+renderViewButton();
 // Profils
 $('open-profiles').addEventListener('click', function () { openProfiles(); });
 $('profiles-list').addEventListener('click', function (e) {
@@ -74,13 +74,16 @@ renderProfileButton();
 // Bandeau d'accueil : sélectionné au démarrage s'il est prêt et que la sélection n'a pas encore bougé
 $('hero').addEventListener('click', openHeroItem);
 loadHero().then(function () {
+  // La sélection n'a pas encore bougé : le démarrage a pu la poser sur la première vignette ou sur la barre de
+  // recherche (grille vide), avant que le bandeau n'arrive — depuis c411 ou depuis la sélection mémorisée
   var active = document.activeElement, firstCard = $('home-grid').querySelector('[data-f]');
-  if (!$('hero').classList.contains('off') && state.screen === 'home' && (!active || active === document.body || active === firstCard)) {
+  var untouched = !active || active === document.body || active === firstCard || active === $('search-box');
+  if (!$('hero').classList.contains('off') && state.screen === 'home' && untouched) {
     $('hero').parentNode.scrollTop = 0;
     $('hero').focus({ preventScroll: true });
   }
 }).catch(function (e) { debug('error', 'bandeau : ' + e.message); });
-loadHome(true).then(function () {
+refreshHome(true).then(function () {
   var hero = $('hero'), first = $('home-grid').querySelector('[data-f]');
   if (!hero.classList.contains('off')) {
     hero.parentNode.scrollTop = 0;

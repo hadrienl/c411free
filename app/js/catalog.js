@@ -7,36 +7,34 @@ var filtersSettleTimer = null;
 
 function filtersOpen() { return $('filters').classList.contains('open'); }
 
+// Panneau ouvert et fermé par le bouton « Filtres » de l'en-tête, sans changer de sous-onglet
 function toggleFilters(open) {
   var drawer = $('filters');
   open = open == null ? !filtersOpen() : open;
+  if (filtersOpen() === open) return;
   clearTimeout(filtersSettleTimer);
   drawer.classList.remove('settled');
   drawer.classList.toggle('open', open);
-  if (open) {
-    // Débordement autorisé une fois ouvert, pour que le halo des boutons sélectionnés ne soit pas coupé
-    filtersSettleTimer = setTimeout(function () { drawer.classList.add('settled'); }, FILTERS_ANIM_MS);
-    var first = drawer.querySelector('.tab.selected') || drawer.querySelector('[data-f]');
-    if (first) first.focus();
-    loadGenres().then(renderFilters); // prépare la liste des genres
-  } else {
-    $('open-filters').focus();
-  }
+  updateHeroVisibility(); // le panneau prend la place du bandeau
+  if (!open) { $('open-filters').focus(); return; }
+  // Débordement autorisé une fois ouvert, pour que le halo des boutons sélectionnés ne soit pas coupé
+  filtersSettleTimer = setTimeout(function () { drawer.classList.add('settled'); }, FILTERS_ANIM_MS);
+  var first = drawer.querySelector('.selected') || drawer.querySelector('[data-f]');
+  if (first) first.focus();
+  loadGenres().then(renderFilters); // prépare la liste des genres
 }
 
 function renderFilters() {
-  var f = state.filters, n = activeFilterCount(f);
+  var f = state.filters;
   document.querySelectorAll('#filter-type [data-subcat]').forEach(function (x) { x.classList.toggle('selected', x.getAttribute('data-subcat') === f.subcat); });
   $('filter-year').innerHTML = esc(f.year || 'Toutes les années') + '<span class="caret">▾</span>';
   $('filter-genre').innerHTML = esc((f.genre && genreName(f.genre)) || 'Tous les genres') + '<span class="caret">▾</span>';
-  $('open-filters').innerHTML = FILTER_ICON + 'Filtres' + (n ? '<span class="count">' + n + '</span>' : '');
 }
 
 function applyFilters() {
   renderFilters();
-  updateHeroVisibility();
-  state.lastFocus.home = null;
-  loadHome(true);
+  renderTopbar(); // compteur des filtres actifs sur le bouton « Filtres »
+  refreshHome(true);
 }
 
 function pickYear() {
@@ -57,15 +55,16 @@ function resetFilters() {
 }
 
 // note : texte à la place de la ligne langue · taille · sources (ex. raison d'une recommandation)
-function cardHtml(prefix, t, note) {
+// newHashes : releases signalées « Nouveau » (nouveaux épisodes d'une série suivie)
+function cardHtml(prefix, t, note, newHashes) {
   var n = prettyName(t.name);
   var text = n.title + (n.episode ? ' · ' + n.episode : '') + (n.year ? ' (' + n.year + ')' : '');
   var img = t.posterUrl
     ? '<img class="fade" src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">'
     : '';
-  var fresh = prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash];
+  var fresh = !!(newHashes && newHashes[t.infoHash]);
   var rightBadge = fresh ? '<span class="q right fresh">Nouveau</span>'
-    : (isLater(t.infoHash) && !isLaterMode(state.filters)) ? '<span class="q right later">' + iconSvg('bookmark') + '</span>'
+    : (isLater(t.infoHash) && !onCatalogTab('later')) ? '<span class="q right later">' + iconSvg('bookmark') + '</span>'
     : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
     + '<div class="poster"><div class="ph">' + iconSvg('movie') + '</div>' + img
@@ -83,7 +82,7 @@ function cardHtml(prefix, t, note) {
 function renderGrid(gridId, prefix, bucket, append) {
   var grid = $(gridId);
   var start = append ? bucket.items.length - bucket.lastBatch : 0;
-  var html = bucket.items.slice(start).map(function (t) { return cardHtml(prefix, t); }).join('');
+  var html = bucket.items.slice(start).map(function (t) { return cardHtml(prefix, t, null, bucket.newHashes); }).join('');
   if (append) grid.insertAdjacentHTML('beforeend', html); else grid.innerHTML = html || '<div class="empty">Aucun résultat.</div>';
   return start;
 }
@@ -114,8 +113,10 @@ async function loadFollowed() {
   var home = state.home;
   home.generation = (home.generation || 0) + 1; home.items = []; home.done = true; home.loading = false; // coupe le défilement infini
   var all = loadSeries(), keys = Object.keys(all), grid = $('home-grid');
+  renderHomeTitle('');
   if (!keys.length) {
-    grid.innerHTML = '<div class="empty">Aucune série suivie pour l\'instant : regardez un épisode dans Médias, la série apparaîtra ici.</div>';
+    state.follow.list = [];
+    grid.innerHTML = '<div class="empty">Aucune série suivie pour l\'instant : regardez un épisode dans la Bibliothèque, la série apparaîtra ici.</div>';
     return;
   }
   grid.innerHTML = '<div class="empty">Recherche des nouveaux épisodes de ' + keys.length + ' série(s)…</div>';
@@ -126,13 +127,23 @@ async function loadFollowed() {
         .then(function (matched) { return { key: k, series: all[k], summary: seriesSummary(all[k], matched) }; })
         .catch(function () { return { key: k, series: all[k], summary: seriesSummary(all[k], []), error: true }; });
     }));
-    if (generation !== followGeneration || !isFollowMode(state.filters)) return;
+    if (generation !== followGeneration || !onCatalogTab('follow')) return;
     list = list.concat(batch);
   }
   list.sort(function (a, b) { return b.summary.latestAt - a.summary.latestAt; });
   state.follow.list = list;
-  grid.innerHTML = list.map(followCardHtml).join('');
+  renderFollowed();
   debug('info', 'séries suivies', { series: list.length, avecNouveautes: list.filter(function (x) { return x.summary.newCount; }).length });
+}
+
+// Séries suivies affichées, filtrées par la recherche en cours (l'index reste celui de state.follow.list)
+function renderFollowed() {
+  var q = state.query.catalog;
+  var shown = state.follow.list.map(function (x, i) { return { x: x, i: i }; })
+    .filter(function (e) { return matchesQuery(e.x.series.title, q); });
+  $('home-grid').innerHTML = shown.map(function (e) { return followCardHtml(e.x, e.i); }).join('')
+    || '<div class="empty">' + (q ? 'Aucune série suivie ne correspond à cette recherche.' : 'Aucune série suivie pour l\'instant : regardez un épisode dans la Bibliothèque, la série apparaîtra ici.') + '</div>';
+  renderHomeTitle(q ? resultsLabel(shown.length, q) : '', q ? 'RETOUR effacer la recherche' : '');
 }
 
 // Appui long sur une série suivie : ne plus la suivre (les fichiers ne sont pas touchés)
@@ -165,30 +176,31 @@ function unfollowSeries(x) {
   var list = state.follow.list, index = list.indexOf(x);
   if (index >= 0) list.splice(index, 1);
   closeModal();
-  var grid = $('home-grid');
-  grid.innerHTML = list.map(followCardHtml).join('') || '<div class="empty">Aucune série suivie pour l\'instant : regardez un épisode dans Médias, la série apparaîtra ici.</div>';
-  var target = $('s-' + Math.min(Math.max(index, 0), list.length - 1)) || $('open-filters');
+  renderFollowed();
+  var target = $('s-' + Math.min(Math.max(index, 0), list.length - 1)) || $('tab-follow');
   if (target) target.focus();
   toast('« ' + x.series.title + ' » n\'est plus suivie');
 }
 
-// Releases disponibles d'une série, nouveautés en premier (écran des résultats)
+// Releases disponibles d'une série suivie, nouveautés en premier, affichées en place dans la grille de l'accueil
 function openSeries(index) {
   var x = state.follow.list[index];
   if (!x) return;
+  var fromGrid = document.activeElement && document.activeElement.closest && document.activeElement.closest('#home-grid');
+  state.seriesOpen = index;
   var b = state.results;
   b.generation = (b.generation || 0) + 1; b.loading = false; b.done = true; b.q = '';
-  b.items = x.summary.releases.map(function (a) { return a.release; });
+  b.items = x.summary.releases.map(function (a) { return a.release; }).filter(keepCatalogItem);
   b.total = b.items.length; b.lastBatch = b.items.length;
   b.newHashes = {};
   x.summary.releases.forEach(function (a) { if (a.isNew) b.newHashes[a.release.infoHash] = true; });
   var n = x.summary.newCount;
-  $('results-title').innerHTML = esc(x.series.title + ' · vu jusqu\'à ' + episodeCode(x.series) + ' · ' + (n ? freshLabel(n) : 'à jour'))
-    + '<small>RETOUR séries suivies</small>';
-  renderGrid('results-grid', 'r-', b, false);
-  if (!b.items.length) $('results-grid').innerHTML = '<div class="empty">Aucune release trouvée sur c411 pour cette série.</div>';
-  state.lastFocus.results = null;
-  show('results');
+  renderHomeTitle(x.series.title + ' · vu jusqu\'à ' + episodeCode(x.series) + ' · ' + (n ? freshLabel(n) : 'à jour'), 'RETOUR séries suivies');
+  renderGrid('home-grid', 'h-', b, false);
+  if (!b.items.length) $('home-grid').innerHTML = '<div class="empty">Aucune release trouvée sur c411 pour cette série.</div>';
+  $('home-grid').parentNode.scrollTop = 0;
+  var first = fromGrid && $('home-grid').querySelector('[data-f]');
+  if (first) first.focus({ preventScroll: true });
 }
 
 // ---------- Défilement infini ----------
@@ -232,53 +244,81 @@ function loadMoreIfNeeded(gridId) {
   var wrap = grid.parentNode;
   var index = Array.prototype.indexOf.call(cards, document.activeElement);
   var nearEnd = index >= cards.length - GRID_COLUMNS || wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - GRID_LOAD_MARGIN_PX;
-  if (!nearEnd) return;
-  if (gridId === 'home-grid') loadHome(false); else search(false);
+  if (!nearEnd || isLocalFilterTab(currentTab()) || state.seriesOpen != null) return; // listes déjà complètes
+  if (state.query.catalog) search(false); else loadHome(false);
 }
 
 function loadLaterList() {
-  var home = state.home;
-  home.generation = (home.generation || 0) + 1; home.items = laterList(); home.done = true; home.loading = false; // coupe le défilement infini
+  var home = state.home, q = state.query.catalog;
+  home.generation = (home.generation || 0) + 1; home.done = true; home.loading = false; // coupe le défilement infini
+  home.items = laterList().filter(keepCatalogItem);
   $('home-grid').innerHTML = home.items.map(function (t) { return cardHtml('h-', t); }).join('')
-    || '<div class="empty">Aucun titre en attente : sur la fiche d\'un film ou d\'une série, choisissez « Plus tard ».</div>';
+    || '<div class="empty">' + (q ? 'Aucun titre en attente ne correspond à cette recherche.'
+      : 'Aucun titre en attente : sur la fiche d\'un film ou d\'une série, choisissez « Plus tard ».') + '</div>';
+  renderHomeTitle(q ? resultsLabel(home.items.length, q) : '', q ? 'RETOUR effacer la recherche' : '');
+}
+
+// Ligne de titre au-dessus de la grille : ce qui est affiché, et à droite ce que fait RETOUR
+function renderHomeTitle(text, hint) {
+  var el = $('home-title');
+  el.innerHTML = text ? esc(text) + (hint ? '<small>' + esc(hint) + '</small>' : '') : '';
+  el.classList.toggle('off', !text);
+}
+
+function resultsLabel(count, q) { return count + ' résultat(s) pour « ' + q + ' »'; }
+
+function catalogFilters() { return filterParams(state.filters); }
+
+// Un item de liste passe la recherche et les filtres du Catalogue
+function keepCatalogItem(item) {
+  return matchesQuery(prettyName(item.name).title, state.query.catalog) && itemMatchesFilters(item, state.filters);
+}
+
+// Contenu de l'accueil : choisi d'après le sous-onglet, la recherche en cours et la série suivie ouverte
+async function refreshHome(reset) {
+  var tab = currentTab();
+  updateHeroVisibility();
+  if (isLocalFilterTab(tab)) {
+    if (!reset) return;
+    if (tab === 'foryou') await loadForYou();
+    else if (tab === 'later') loadLaterList();
+    else if (state.seriesOpen != null) openSeries(state.seriesOpen);
+    else await loadFollowed();
+    return;
+  }
+  await (state.query.catalog ? search(reset) : loadHome(reset));
 }
 
 async function loadHome(reset) {
-  if (isForYouMode(state.filters)) { if (reset) loadForYou(); return; } // onglet Pour vous : recommandations du profil
-  if (isFollowMode(state.filters)) { if (reset) loadFollowed(); return; } // onglet Suivi : séries suivies à la place des nouveautés
-  if (isLaterMode(state.filters)) { if (reset) loadLaterList(); return; } // onglet En attente : file d'attente « plus tard »
+  if (reset) renderHomeTitle('');
   try {
-    var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, filterParams(state.filters));
+    var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, catalogFilters());
     if (await loadPage(state.home, 'home-grid', 'h-', params, reset)) loadMoreIfNeeded('home-grid'); // page trop courte pour remplir l'écran
   } catch (e) {
     toast('Impossible de charger les nouveautés : ' + e.message, true);
   }
 }
 
+// Recherche c411 : les résultats prennent la place des nouveautés dans la grille de l'accueil
 async function search(reset) {
   var b = state.results;
-  if (reset) {
-    var q = $('query').value.trim();
-    if (!q) { toast('Tapez un titre à rechercher'); return; }
-    b.q = q;
-    b.newHashes = null;
-    toast('Recherche de « ' + q + ' »…');
-  }
+  if (reset) { b.q = state.query.catalog; b.newHashes = null; }
+  if (!b.q) return;
   try {
-    var params = Object.assign({ name: b.q, category: 1, sortBy: 'relevance' }, filterParams(state.filters));
-    if (!await loadPage(b, 'results-grid', 'r-', params, reset)) return;
+    var params = Object.assign({ name: b.q, category: 1, sortBy: 'relevance' }, catalogFilters());
+    if (!await loadPage(b, 'home-grid', 'h-', params, reset)) return;
     var summary = filterSummary(state.filters);
-    $('results-title').innerHTML = esc(b.total + ' résultat(s) pour « ' + b.q + ' »' + (summary ? ' · ' + summary : '')) + '<small>RETOUR nouvelle recherche</small>';
-    if (reset) { state.lastFocus.results = null; show('results'); }
-    loadMoreIfNeeded('results-grid');
+    renderHomeTitle(resultsLabel(b.total, b.q) + (summary ? ' · ' + summary : ''), 'RETOUR effacer la recherche');
+    loadMoreIfNeeded('home-grid');
   } catch (e) {
     toast('Recherche impossible : ' + e.message, true);
   }
 }
 
-async function openDetail(hash, from) {
-  state.detailFrom = from;
-  var item = (from === 'home' ? state.home.items : state.results.items).filter(function (t) { return t.infoHash === hash; })[0] || {};
+async function openDetail(hash) {
+  state.detailFrom = 'home';
+  var pick = function (list) { return (list || []).filter(function (t) { return t.infoHash === hash; })[0]; };
+  var item = pick(state.results.items) || pick(state.home.items) || {};
   var n = prettyName(item.name || '');
   // Affichage immédiat avec les données de la liste, puis enrichissement
   $('d-backdrop').style.backgroundImage = '';
@@ -290,7 +330,7 @@ async function openDetail(hash, from) {
   $('d-release').textContent = item.name || '';
   $('d-badges').innerHTML = '';
   $('d-audio').textContent = '';
-  state.detail = { infoHash: hash, name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl };
+  state.detail = { infoHash: hash, name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl, subcategory: item.subcategory };
   renderLaterButton();
   $('d-trailer').classList.add('off');
   show('detail', $('d-download'));
@@ -304,7 +344,8 @@ async function openDetail(hash, from) {
       infoHash: hash, name: d.name, size: d.size,
       seeders: d.seeders != null ? d.seeders : item.seeders,
       language: d.language || item.language,
-      posterUrl: tmdb.posterUrl || item.posterUrl
+      posterUrl: tmdb.posterUrl || item.posterUrl,
+      subcategory: d.subcategory || item.subcategory // sous-catégorie retenue par « Plus tard », pour les filtres de la file d'attente
     };
     renderLaterButton();
 
@@ -372,18 +413,15 @@ function toggleLater() {
     toast('À télécharger plus tard : ' + title);
   }
   renderLaterButton();
-  if (state.detailFrom === 'home' && isLaterMode(state.filters)) loadLaterList(); // accueil à jour au retour, sans voler le focus
+  if (onCatalogTab('later')) loadLaterList(); // accueil à jour au retour, sans voler le focus
   $('d-later').focus();
 }
 
-function onGridClick(from) {
-  return function (e) {
-    var series = e.target.closest('[data-series]');
-    if (series) { openSeries(Number(series.getAttribute('data-series'))); return; }
-    var card = e.target.closest('[data-hash]');
-    if (!card) return;
-    openDetail(card.getAttribute('data-hash'), from);
-  };
+function onGridClick(e) {
+  var series = e.target.closest('[data-series]');
+  if (series) { openSeries(Number(series.getAttribute('data-series'))); return; }
+  var card = e.target.closest('[data-hash]');
+  if (card) openDetail(card.getAttribute('data-hash'));
 }
 
 var downloading = false;
@@ -404,7 +442,7 @@ async function startDownload() {
     debug('info', 'téléchargement ajouté', { id: added.id, name: d.name });
     toast('Ajouté à la Freebox : ' + prettyName(d.name).title);
     removeLater(d.infoHash); // signet honoré : plus besoin de la file d'attente
-    if (state.detailFrom === 'home' && isLaterMode(state.filters)) loadLaterList(); // accueil à jour au retour
+    if (onCatalogTab('later')) loadLaterList(); // accueil à jour au retour
     state.lastFocus.downloads = null;
     openDownloads();
   } catch (e) {
@@ -419,19 +457,20 @@ async function startDownload() {
 // La barre visible (#search-box) fait partie de la navigation ; le vrai champ n'est affiché que pendant la saisie,
 // sinon il capturerait les flèches et bloquerait l'accès aux autres boutons.
 function openSearch() {
-  document.querySelector('.search').classList.add('editing');
+  $('search-box').parentNode.classList.add('editing');
+  $('query').value = state.query[state.section];
   $('query').focus();
   toast('Tapez le titre puis « Terminé » pour rechercher · RETOUR pour fermer le clavier');
 }
 
+// Validée, la recherche s'applique à la section affichée ; vide, elle l'efface
 function closeSearch(submit) {
-  var box = document.querySelector('.search');
+  var box = $('search-box').parentNode;
   if (!box.classList.contains('editing')) return;
   var q = $('query').value.trim();
   box.classList.remove('editing');
   $('query').blur();
-  $('search-label').textContent = q || 'Rechercher un film, une série…';
   $('search-box').focus();
   $('toast').style.display = 'none';
-  if (submit && q) search(true);
+  if (submit) runSearch(q); else renderTopbar();
 }

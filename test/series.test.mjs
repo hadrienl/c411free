@@ -89,7 +89,7 @@ test('ne plus suivre une série', () => {
   assert.deepEqual(plain(Object.keys(app.removeSeries(all, 'inconnue'))), ['young sheldon']);
 });
 
-test('onglet Suivi : pas un filtre envoyé à c411', () => {
-  assert.equal(app.isFollowMode({ subcat: 'follow' }), true);
-  assert.equal(app.filterParams({ subcat: 'follow', year: '', genre: '' }).subcat, '');
+test('sous-catégories envoyées à c411', () => {
+  assert.equal(app.filterParams({ subcat: '7', year: '', genre: '' }).subcat, '7');
+  assert.equal(app.filterParams(app.emptyFilters()).subcat, '');
 });

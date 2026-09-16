@@ -21,7 +21,8 @@ function forgetLater() { laterCache = null; } // changement de profil : le memo 
 
 function addLater(item, nowMs) {
   var all = loadLater(), hash = String(item.infoHash || '').toLowerCase();
-  var entry = { name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl, at: nowMs == null ? Date.now() : nowMs };
+  var sub = item.subcategory && (item.subcategory.id || item.subcategory);
+  var entry = { name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl, subcategory: sub ? Number(sub) : null, at: nowMs == null ? Date.now() : nowMs };
   all[hash] = entry;
   var keys = Object.keys(all);
   if (keys.length > LATER_MAX) {
