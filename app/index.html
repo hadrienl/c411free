@@ -13,11 +13,11 @@
   <header class="top">
     <div class="brand">C411free</div>
     <div class="search">
-      <span class="search-box" data-f tabindex="-1" id="search-box">🔎 <span id="search-label">Rechercher un film, une série…</span></span>
+      <span class="search-box" data-f tabindex="-1" id="search-box"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span id="search-label">Rechercher un film, une série…</span></span>
       <input id="query" type="text" placeholder="Titre du film ou de la série…" autocomplete="off">
     </div>
     <span class="btn" data-f tabindex="-1" id="open-filters">Filtres</span>
-    <span class="btn" data-f tabindex="-1" id="open-downloads">🎬 Médias</span>
+    <span class="btn" data-f tabindex="-1" id="open-downloads"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg><span>Médias</span></span>
     <span class="who-btn" data-f tabindex="-1" id="open-profiles"><span class="avatar" id="profile-avatar"></span><span class="tip" id="profile-tip"></span></span>
   </header>
   <div class="drawer" id="filters">
@@ -31,8 +31,8 @@
             <span class="btn tab" data-f tabindex="-1" data-subcat="7">Séries</span>
             <span class="btn tab" data-f tabindex="-1" data-subcat="1,2">Animation</span>
             <span class="btn tab" data-f tabindex="-1" data-subcat="4,57">Documentaires</span>
-            <span class="btn tab follow" data-f tabindex="-1" data-subcat="foryou">✨ Pour vous</span>
-            <span class="btn tab" data-f tabindex="-1" data-subcat="follow">📺 Suivi</span>
+            <span class="btn tab follow" data-f tabindex="-1" data-subcat="foryou"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3ZM5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z"/></svg><span>Pour vous</span></span>
+            <span class="btn tab" data-f tabindex="-1" data-subcat="follow"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m9 3 3 3 3-3M9 22h6"/></svg><span>Suivi</span></span>
           </nav>
         </div>
         <div class="filter-row">
@@ -53,7 +53,7 @@
         <h2 class="hero-title" id="hero-title"></h2>
         <div class="hero-meta" id="hero-meta"></div>
         <p class="hero-overview" id="hero-overview"></p>
-        <div class="hero-hint">OK voir la fiche · ◀ ▶ autres titres</div>
+        <div class="hero-hint">OK voir la fiche · GAUCHE / DROITE autres titres</div>
       </div>
       <div class="hero-dots" id="hero-dots"></div>
     </div>
@@ -80,9 +80,9 @@
         <div class="d-audio" id="d-audio"></div>
       </div>
       <div class="actions">
-        <span class="btn primary" data-f tabindex="-1" id="d-download">📥 Télécharger sur la Freebox</span>
-        <span class="btn off" data-f tabindex="-1" id="d-trailer">▶ Bande-annonce (YouTube)</span>
-        <span class="btn" data-f tabindex="-1" id="d-back">↩ Retour</span>
+        <span class="btn primary" data-f tabindex="-1" id="d-download"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 19h16"/></svg><span>Télécharger sur la Freebox</span></span>
+        <span class="btn off" data-f tabindex="-1" id="d-trailer"><svg class="ui-icon icon-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6V6Z"/></svg><span>Bande-annonce (YouTube)</span></span>
+        <span class="btn" data-f tabindex="-1" id="d-back"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6-6 6 6 6M4 12h10a6 6 0 0 1 6 6"/></svg><span>Retour</span></span>
       </div>
     </div>
   </div>
@@ -95,12 +95,12 @@
       <span class="btn tab select selected" data-f tabindex="-1" id="dl-sort-date" data-sort-group="date">Récents</span>
       <span class="btn tab select" data-f tabindex="-1" id="dl-sort-name" data-sort-group="name">A → Z</span>
       <span class="btn tab select" data-f tabindex="-1" id="dl-sort-size" data-sort-group="size">Taille ↓</span>
-      <span class="btn" data-f tabindex="-1" id="dl-view">☰ Liste</span>
-      <span class="btn" data-f tabindex="-1" id="dl-rescan">🔄 Actualiser</span>
+      <span class="btn" data-f tabindex="-1" id="dl-view"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span>Liste</span></span>
+      <span class="btn" data-f tabindex="-1" id="dl-rescan"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 0 0 6.3 6.3L4 9m2 6a7 7 0 0 0 11.7 2.7L20 15"/></svg><span>Actualiser</span></span>
     </nav>
   </header>
   <div class="list-wrap"><div id="downloads-list" class="grid"></div></div>
-  <p class="hint">OK pour regarder · OK maintenu : options (supprimer) · 📁 = dossier d'épisodes · RETOUR accueil</p>
+  <p class="hint">OK pour regarder · OK maintenu : options (supprimer) · L’icône dossier regroupe les épisodes · RETOUR accueil</p>
 </section>
 
 <section id="files" class="screen">
@@ -112,7 +112,7 @@
 <section id="profiles" class="screen">
   <div class="pf-center">
     <h2 class="pf-title">Qui regarde ?</h2>
-    <p class="pf-sub">◀ ▶ choisir · OK pour regarder · ▼ modifier le profil · RETOUR accueil</p>
+    <p class="pf-sub">GAUCHE / DROITE choisir · OK pour regarder · BAS modifier le profil · RETOUR accueil</p>
     <div class="pf-list" id="profiles-list"></div>
   </div>
 </section>
@@ -128,7 +128,7 @@
       <div>
         <div class="pf-label">Surnom</div>
         <div class="search" id="nick-wrap">
-          <span class="search-box" data-f tabindex="-1" id="nick-box">✎ <span id="nick-label"></span></span>
+          <span class="search-box" data-f tabindex="-1" id="nick-box"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Zm10-13 3 3"/></svg><span id="nick-label"></span></span>
           <input id="nick-input" type="text" maxlength="16" autocomplete="off" placeholder="Surnom…">
         </div>
       </div>
@@ -162,8 +162,8 @@
     </div>
   </div>
   <div id="subs"></div>
-  <span id="next-episode" data-f tabindex="-1">Lire l'épisode suivant ›</span>
-  <span id="skip-intro" data-f tabindex="-1">Passer le générique ›</span>
+  <span id="next-episode" data-f tabindex="-1"><span>Lire l'épisode suivant</span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
+  <span id="skip-intro" data-f tabindex="-1"><span>Passer le générique</span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
   <div class="track-menu" id="track-menu">
     <div class="tm-title" id="tm-title"></div>
     <div id="tm-list"></div>

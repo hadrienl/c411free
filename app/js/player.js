@@ -115,7 +115,7 @@ function skipIntro() {
   if (!intro) return;
   try {
     webapis.avplay.seekTo(Math.floor(intro.end), function () { updateOsd(); }, function () {});
-    osdState('⏩ Générique passé', 1200);
+    osdState('Générique passé', 1200);
   } catch (e) { /* hors limites */ }
 }
 
@@ -258,7 +258,7 @@ function applyPrefs() {
 
 function renderTrackSummary() {
   var subs = player.currentText === 'default' ? 'défaut du fichier' : player.currentText ? player.currentText.name : 'désactivés';
-  $('osd-tracks').textContent = '🔊 ' + (player.currentAudio ? player.currentAudio.name : '—') + '   💬 ' + subs;
+  $('osd-tracks').innerHTML = iconSvg('audio') + '<span>' + esc(player.currentAudio ? player.currentAudio.name : '—') + '</span>' + iconSvg('subtitles') + '<span>' + esc(subs) + '</span>';
 }
 
 // --- Menus Audio / Sous-titres ---
@@ -272,11 +272,11 @@ function openMenu(kind) {
   }
   var menu = $('track-menu');
   menu.setAttribute('data-kind', kind);
-  $('tm-title').textContent = kind === 'audio' ? '🔊 Langue audio' : '💬 Sous-titres';
+  $('tm-title').innerHTML = iconSvg(kind === 'audio' ? 'audio' : 'subtitles') + '<span>' + (kind === 'audio' ? 'Langue audio' : 'Sous-titres') + '</span>';
   $('tm-list').innerHTML = items.length
     ? items.map(function (it) {
       return '<div class="tm-item" data-f tabindex="-1" id="tm-' + it.i + '" data-i="' + it.i + '">'
-        + '<span class="check">' + (it.checked ? '✓' : '') + '</span><span>' + esc(it.name) + '</span>'
+        + '<span class="check">' + (it.checked ? iconSvg('check') : '') + '</span><span>' + esc(it.name) + '</span>'
         + (it.desc ? '<span class="desc">' + esc(it.desc) + '</span>' : '') + '</div>';
     }).join('')
     : '<div class="tm-item"><span class="check"></span><span>Aucune piste disponible</span></div>';
@@ -302,12 +302,12 @@ $('tm-list').addEventListener('click', function (e) {
   if (!item) return;
   var i = Number(item.getAttribute('data-i'));
   if ($('track-menu').getAttribute('data-kind') === 'audio') {
-    if (player.audio[i]) { selectAudio(player.audio[i], true); osdState('🔊 ' + player.audio[i].name, 1500); }
+    if (player.audio[i]) { selectAudio(player.audio[i], true); osdState('Audio : ' + player.audio[i].name, 1500); }
   } else {
     var t = i < 0 ? null : player.text[i];
     if (t && t.image) toast('Ces sous-titres sont en image (PGS) : la TV ne peut pas les afficher dans l\'app.');
     selectSubtitles(t, true);
-    osdState('💬 ' + (t ? t.name : 'Sous-titres désactivés'), 1500);
+    osdState(t ? 'Sous-titres : ' + t.name : 'Sous-titres désactivés', 1500);
   }
   closeMenu();
 });
@@ -336,7 +336,7 @@ function restart() {
     noteSeek(av.getCurrentTime(), 0);
     av.seekTo(0, function () { updateOsd(); }, function () {});
     player.introDismissed = false; // le générique peut à nouveau être proposé
-    osdState('⏮ Depuis le début', 1200);
+    osdState('Depuis le début', 1200);
   } catch (e) { /* lecteur indisponible */ }
 }
 function seek(seconds) {
@@ -346,7 +346,7 @@ function seek(seconds) {
     var from = av.getCurrentTime();
     if (seconds > 0) av.jumpForward(seconds * 1000); else av.jumpBackward(-seconds * 1000);
     noteSeek(from, from + seconds * 1000);
-    osdState(seconds > 0 ? '⏩ +' + seconds + ' s' : '⏪ ' + seconds + ' s', 1000);
+    osdState(seconds > 0 ? '+' + seconds + ' s' : seconds + ' s', 1000);
   } catch (e) { /* hors limites */ }
   updateOsd();
 }
@@ -391,7 +391,7 @@ function scrubCommit() {
   try {
     noteSeek(webapis.avplay.getCurrentTime(), target);
     webapis.avplay.seekTo(Math.floor(target), function () { updateOsd(); }, function (err) { toast('Déplacement impossible : ' + err, true); });
-    osdState('⏩ ' + fmtTime(target), 1200);
+    osdState(fmtTime(target), 1200);
   } catch (e) {
     toast('Déplacement impossible : ' + (e.message || e.name), true);
   }
@@ -603,7 +603,7 @@ async function play(file, returnTo, task) {
       var resumeAt = savedPosition(task, file);
       if (resumeAt) {
         trace('reprise', { position: resumeAt });
-        osdState('⏯ Reprise à ' + fmtTime(resumeAt), 2500);
+        osdState('Reprise à ' + fmtTime(resumeAt), 2500);
         try {
           av.seekTo(resumeAt, function () { player.resumeReady = true; updateOsd(); }, function () { player.resumeReady = true; });
         } catch (e) {

@@ -2,7 +2,7 @@
 
 // ---------- Téléchargements ----------
 var STATUS = { downloading: 'Téléchargement', seeding: 'Partage', done: 'Terminé', stopped: 'En pause', queued: 'En attente', error: 'Erreur', checking: 'Vérification', stopping: 'Arrêt', retry: 'Nouvel essai', starting: 'Démarrage', extracting: 'Extraction', repairing: 'Réparation' };
-var ICON = { downloading: '⬇️', seeding: '✅', done: '✅', stopped: '⏸', queued: '⏳', error: '⚠️', checking: '🔍', starting: '⏳', retry: '🔁' };
+var STATUS_ICON = { downloading: 'download', seeding: 'check', done: 'check', stopped: 'pause', queued: 'clock', error: 'warning', checking: 'search', starting: 'clock', retry: 'retry' };
 // Date d'un média : ajout du téléchargement associé ou dernière modification de ses fichiers
 function mediaDate(m) { return Math.max(m.task ? m.task.created_ts || 0 : 0, m.mtime || 0); }
 var SORTS = {
@@ -62,20 +62,20 @@ function mediaCardHtml(m, posterCache, nowMs) {
   var q = posterQuery(m);
   var url = q ? cachedPoster(posterCache, q, nowMs) : '';
   var sub = inProgress
-    ? [(ICON[t.status] || '⬇️') + ' ' + (STATUS[t.status] || t.status), active && t.eta ? 'reste ' + fmtEta(t.eta) : '']
+    ? [(STATUS[t.status] || t.status), active && t.eta ? 'reste ' + fmtEta(t.eta) : '']
     : [gb(m.size), fmtDate(mediaDate(m))];
   return '<div class="poster' + (inProgress ? ' incomplete' : '') + '"' + (q ? ' data-poster-key="' + esc(q.key) + '"' : '') + '>'
-    + '<div class="ph">' + (m.kind === 'folder' ? '📁' : '🎬') + '</div>'
+    + '<div class="ph">' + iconSvg(m.kind === 'folder' ? 'folder' : 'movie') + '</div>'
     + (url ? '<img src="' + esc(poster(url, 'w342')) + '" onerror="this.remove()">' : '')
     + '<div class="badges">'
-    + (m.kind === 'folder' ? '<span class="q">📁 ' + m.files.length + '</span>' : '')
-    + (started ? '<span class="q right started">⏯ ' + Math.round(started * 100) + ' %</span>' : seen ? '<span class="q right watched">' + seen.replace(' vus', '') + '</span>' : '')
+    + (m.kind === 'folder' ? '<span class="q">' + iconSvg('folder') + m.files.length + '</span>' : '')
+    + (started ? '<span class="q right started">' + iconSvg('resume') + Math.round(started * 100) + ' %</span>' : seen ? '<span class="q right watched">' + iconSvg('eye') + esc(seen.replace(' vus', '')) + '</span>' : '')
     + '</div>'
     + (started ? '<div class="resume-bar"><div style="width:' + (started * 100).toFixed(1) + '%"></div></div>' : '')
     + (inProgress ? '<span class="dl-pct">' + pct.toFixed(0) + ' %</span><div class="dl-bar' + (active ? ' active' : '') + '"><div style="width:' + pct.toFixed(1) + '%"></div></div>' : '')
     + '</div>'
     + '<div class="cap">' + esc(label(m.name)) + '</div>'
-    + '<div class="sub">' + esc(sub.filter(Boolean).join(' · ')) + '</div>';
+    + '<div class="sub">' + (inProgress ? iconSvg(STATUS_ICON[t.status] || 'download') : '') + esc(sub.filter(Boolean).join(' · ')) + '</div>';
 }
 
 // Film commencé mais pas terminé : avancement de sa position de reprise (les dossiers affichent leurs épisodes vus)
@@ -84,7 +84,7 @@ function mediaStartedRatio(m) {
 }
 
 function startedBadge(ratio, prefix) {
-  return '<span class="seen started">⏯ ' + (prefix || '') + Math.round(ratio * 100) + ' %</span>';
+  return '<span class="seen started">' + iconSvg('resume') + esc(prefix || '') + Math.round(ratio * 100) + ' %</span>';
 }
 
 // Ligne d'un média (vue liste)
@@ -95,14 +95,14 @@ function mediaRowHtml(m, index) {
   var pct = t ? (t.rx_pct || 0) / 100 : 0;
   var started = mediaStartedRatio(m);
   var seen = started ? '' : watchedBadge(mediaOwner(m));
-  var icon = inProgress ? (ICON[t.status] || '⬇️') : m.kind === 'folder' ? '📁' : '🎬';
+  var icon = inProgress ? (STATUS_ICON[t.status] || 'download') : m.kind === 'folder' ? 'folder' : 'movie';
   var meta = [];
   if (m.kind === 'folder') meta.push(m.files.length + ' vidéos');
   if (inProgress) meta.push((STATUS[t.status] || t.status) + (active ? ' · ' + (t.rx_rate / 1e6).toFixed(1) + ' Mo/s · reste ' + fmtEta(t.eta) : ''));
   meta.push('ajouté ' + fmtDate(mediaDate(m)));
-  if (!inProgress) meta.push('▶ OK pour regarder');
-  return '<span class="icon">' + icon + '</span>'
-    + '<div class="main"><div class="title">' + esc(label(m.name)) + (started ? ' ' + startedBadge(started) : seen ? ' <span class="seen">' + seen + '</span>' : '') + '</div>'
+  if (!inProgress) meta.push('OK pour regarder');
+  return '<span class="icon">' + iconSvg(icon) + '</span>'
+    + '<div class="main"><div class="title">' + esc(label(m.name)) + (started ? ' ' + startedBadge(started) : seen ? ' <span class="seen">' + iconSvg('eye') + esc(seen) + '</span>' : '') + '</div>'
     + '<div class="meta">' + esc(meta.join(' · ')) + '</div></div>'
     + '<span class="size">' + gb(m.size) + '</span>'
     + (t
@@ -115,7 +115,7 @@ function mediaRowHtml(m, index) {
 state.mediaView = loadMediaView();
 
 function renderViewButton() {
-  $('dl-view').textContent = state.mediaView === 'grid' ? '☰ Liste' : '▦ Icônes';
+  buttonContent('dl-view', state.mediaView === 'grid' ? 'list' : 'grid', state.mediaView === 'grid' ? 'Liste' : 'Icônes');
 }
 
 function toggleMediaView() {
@@ -279,7 +279,7 @@ function renderFiles() {
     var started = startedRatio(ft.task, f);
     var seen = !started && !!entry.files[f.name];
     return '<div class="item" data-f tabindex="-1" id="file-' + i + '" data-file="' + i + '">'
-      + '<span class="icon' + (seen || started ? ' seen' : '') + '">' + (started ? '⏯' : seen ? '👁' : '▶') + '</span>'
+      + '<span class="icon' + (seen || started ? ' seen' : '') + '">' + iconSvg(started ? 'resume' : seen ? 'eye' : 'play') + '</span>'
       + '<div class="main"><div class="title">' + esc(label(f.name)) + (started ? ' ' + startedBadge(started, 'En cours · ') : seen ? ' <span class="seen">Vu</span>' : '') + '</div>'
       + '<div class="meta">' + esc(f.name) + '</div></div>'
       + '<span class="size">' + gb(f.size) + '</span></div>';

@@ -56,7 +56,7 @@ test('fichiers vus et positions de reprise mémorisés', () => {
   const task = { info_hash: 'ABC' };
   app.setVideoCount(task, 10);
   app.markWatched(task, 'e01.mkv');
-  assert.equal(app.watchedBadge(task), '👁 1/10 vus');
+  assert.equal(app.watchedBadge(task), '1/10 vus');
   assert.equal(app.isWatched(task, 'e01.mkv'), true);
 
   const file = { name: 'e02.mkv' };

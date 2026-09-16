@@ -64,10 +64,10 @@ function cardHtml(prefix, t, note) {
     ? '<img class="fade" src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">'
     : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
-    + '<div class="poster"><div class="ph">🎬</div>' + img
+    + '<div class="poster"><div class="ph">' + iconSvg('movie') + '</div>' + img
     + '<div class="badges">'
     + (resolution(t.name) ? '<span class="q">' + resolution(t.name) + '</span>' : '')
-    + (nameAudioOk(t.name) ? '' : '<span class="q warn">⚠️ son</span>')
+    + (nameAudioOk(t.name) ? '' : '<span class="q warn">' + iconSvg('warning') + 'son</span>')
     + (prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash] ? '<span class="q right fresh">Nouveau</span>' : '')
     + '</div></div>'
     + '<div class="cap">' + esc(text) + '</div>'
@@ -97,7 +97,7 @@ function followCardHtml(x, index) {
     : '';
   var status = x.error ? 'recherche impossible' : n ? freshLabel(n) : 'à jour';
   return '<div class="card" data-f tabindex="-1" id="s-' + index + '" data-series="' + index + '">'
-    + '<div class="poster"><div class="ph">📺</div>' + img
+    + '<div class="poster"><div class="ph">' + iconSvg('tv') + '</div>' + img
     + '<div class="badges">' + (n ? '<span class="q right fresh">' + freshLabel(n) + '</span>' : '') + '</div></div>'
     + '<div class="cap">' + esc(s.title) + '</div>'
     + '<div class="sub">' + esc('Vu : ' + episodeCode(s) + ' · ' + status) + '</div>'
@@ -139,7 +139,7 @@ function openSeriesMenu(index) {
     title: x.series.title,
     text: 'Vu jusqu\'à ' + episodeCode(x.series),
     buttons: [
-      { label: '🗑 Ne plus suivre cette série…', danger: true, action: function () { confirmUnfollow(x); } },
+      { label: 'Ne plus suivre cette série…', icon: 'trash', danger: true, action: function () { confirmUnfollow(x); } },
       { label: 'Annuler', action: closeModal }
     ]
   });
@@ -150,7 +150,7 @@ function confirmUnfollow(x) {
     title: 'Ne plus suivre « ' + x.series.title + ' » ?',
     text: 'La série disparaît du Suivi ; vos fichiers ne sont pas supprimés.\nElle reviendra si vous regardez un nouvel épisode.',
     buttons: [
-      { label: '🗑 Ne plus suivre', danger: true, action: function () { unfollowSeries(x); } },
+      { label: 'Ne plus suivre', icon: 'trash', danger: true, action: function () { unfollowSeries(x); } },
       { label: 'Annuler', focus: true, action: closeModal }
     ]
   });
@@ -296,7 +296,7 @@ async function openDetail(hash, from) {
       if (!source || !state.detail || state.detail.infoHash !== hash) return;
       state.detail.trailer = source;
       state.detail.trailerTitle = trailerTitle;
-      $('d-trailer').textContent = source.kind === 'youtube' ? '▶ Bande-annonce (YouTube)' : '▶ Bande-annonce';
+      buttonContent('d-trailer', 'play', source.kind === 'youtube' ? 'Bande-annonce (YouTube)' : 'Bande-annonce');
       $('d-trailer').classList.remove('off');
     }).catch(function (e) { debug('error', 'recherche de bande-annonce : ' + e.message); });
 
@@ -326,7 +326,7 @@ async function openDetail(hash, from) {
       '<span class="badge">' + gb(d.size) + '</span>',
       '<span class="badge">▲ ' + (d.seeders || 0) + ' sources</span>',
       '<span class="badge">' + (d.files || []).length + ' fichier(s)</span>',
-      ok ? '<span class="badge ok">📺 son lisible par la TV</span>' : '<span class="badge warn">⚠️ son non lisible par la TV (DTS/TrueHD)</span>'
+      ok ? '<span class="badge ok">' + iconSvg('check') + 'son lisible par la TV</span>' : '<span class="badge warn">' + iconSvg('warning') + 'son non lisible par la TV (DTS/TrueHD)</span>'
     ].join('');
     $('d-audio').textContent = tracks.length
       ? 'Audio : ' + tracks.map(function (t) { return (LANG[t.lang] || t.lang || '?') + ' ' + t.format + (t.channels ? ' ' + t.channels.replace(/ channels?/, ' can.') : '') + (trackOk(t) ? '' : ' ✗'); }).join(' · ')
@@ -352,7 +352,7 @@ async function startDownload() {
   var d = state.detail;
   if (!d || downloading) return;
   downloading = true;
-  $('d-download').textContent = '⏳ Envoi à la Freebox…';
+  buttonContent('d-download', 'clock', 'Envoi à la Freebox…');
   try {
     var res = await fetch(C411 + '/api?t=get&id=' + d.infoHash + '&apikey=' + encodeURIComponent(S.c411ApiKey));
     if (!res.ok) throw new Error('c411 a refusé le .torrent (HTTP ' + res.status + ')');
@@ -363,14 +363,14 @@ async function startDownload() {
     form.append('download_file', new Blob([blob], { type: 'application/x-bittorrent' }), d.infoHash + '.torrent');
     var added = await fbx('/downloads/add', { method: 'POST', body: form });
     debug('info', 'téléchargement ajouté', { id: added.id, name: d.name });
-    toast('✅ Ajouté à la Freebox : ' + prettyName(d.name).title);
+    toast('Ajouté à la Freebox : ' + prettyName(d.name).title);
     state.lastFocus.downloads = null;
     openDownloads();
   } catch (e) {
     toast('Échec : ' + e.message, true);
   } finally {
     downloading = false;
-    $('d-download').textContent = '📥 Télécharger sur la Freebox';
+    buttonContent('d-download', 'download', 'Télécharger sur la Freebox');
   }
 }
 
@@ -380,7 +380,7 @@ async function startDownload() {
 function openSearch() {
   document.querySelector('.search').classList.add('editing');
   $('query').focus();
-  toast('⌨️ Tapez le titre puis « Terminé » pour rechercher · RETOUR pour fermer le clavier');
+  toast('Tapez le titre puis « Terminé » pour rechercher · RETOUR pour fermer le clavier');
 }
 
 function closeSearch(submit) {

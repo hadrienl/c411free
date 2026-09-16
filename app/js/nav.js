@@ -216,7 +216,7 @@ function openPicker(anchor, title, items, selected, onPick) {
   $('picker-title').textContent = title;
   $('picker-list').innerHTML = items.map(function (it, i) {
     var checked = String(it.value) === String(selected);
-    return '<div class="picker-item" data-f tabindex="-1" id="pick-' + i + '" data-pick="' + i + '"><span class="check">' + (checked ? '✓' : '') + '</span>' + esc(it.label) + '</div>';
+    return '<div class="picker-item" data-f tabindex="-1" id="pick-' + i + '" data-pick="' + i + '"><span class="check">' + (checked ? iconSvg('check') : '') + '</span>' + esc(it.label) + '</div>';
   }).join('');
   var r = anchor.getBoundingClientRect(), picker = $('picker');
   picker.style.left = Math.max(40, Math.min(1920 - 560, r.left)) + 'px';
@@ -245,7 +245,7 @@ var modalState = { buttons: [], returnFocusId: null };
 
 function modalOpen() { return $('modal').classList.contains('open'); }
 
-// Fenêtre modale : { title, text, warn, buttons: [{ label, danger, focus, action }] }
+// Fenêtre modale : { title, text, warn, buttons: [{ label, icon, danger, focus, action }] }
 function openModal(opts) {
   if (!modalOpen()) modalState.returnFocusId = document.activeElement && document.activeElement.id;
   modalState.buttons = opts.buttons || [];
@@ -254,7 +254,7 @@ function openModal(opts) {
   $('modal-warn').textContent = opts.warn || '';
   $('modal-warn').style.display = opts.warn ? 'block' : 'none';
   $('modal-buttons').innerHTML = modalState.buttons.map(function (b, i) {
-    return '<span class="btn' + (b.danger ? ' danger' : '') + '" data-f tabindex="-1" id="modal-btn-' + i + '" data-modal-btn="' + i + '">' + esc(b.label) + '</span>';
+    return '<span class="btn' + (b.danger ? ' danger' : '') + '" data-f tabindex="-1" id="modal-btn-' + i + '" data-modal-btn="' + i + '">' + (b.icon ? iconSvg(b.icon) : '') + '<span>' + esc(b.label) + '</span></span>';
   }).join('');
   $('modal').classList.add('open');
   var focusIndex = Math.max(0, modalState.buttons.findIndex(function (b) { return b.focus; }));

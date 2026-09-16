@@ -10,7 +10,7 @@ function deletePlan(m, tasks, grouped, nowMs) {
     var hours = young.length ? Math.floor(Math.min.apply(null, young.map(function (t) { return nowMs / 1000 - t.created_ts; })) / 3600) : 0;
     return {
       mode: 'download', tasks: related,
-      warn: young.length ? '⚠️ Partage en cours depuis ' + hours + ' h : c411 demande au moins 48 h de partage (ratio).' : ''
+      warn: young.length ? 'Partage en cours depuis ' + hours + ' h : c411 demande au moins 48 h de partage (ratio).' : ''
     };
   }
   return { mode: 'files', targets: Media.deletionTargets(m, grouped) };
@@ -36,7 +36,7 @@ function openMediaMenu(index) {
     title: label(m.name),
     text: m.kind === 'folder' ? m.files.length + ' vidéos · ' + gb(m.size) : gb(m.size),
     buttons: [
-      { label: '🗑 Supprimer…', danger: true, action: function () { confirmDelete(m); } },
+      { label: 'Supprimer…', icon: 'trash', danger: true, action: function () { confirmDelete(m); } },
       { label: 'Annuler', action: closeModal }
     ]
   });
@@ -51,7 +51,7 @@ function confirmDelete(m) {
       text: label(m.name),
       warn: plan.warn,
       buttons: [
-        { label: '🗑 Supprimer le téléchargement et les fichiers', danger: true, action: function () { runDelete(m, function () { return deleteDownloads(plan.tasks, true); }, plan.tasks.map(Media.taskPath)); } },
+        { label: 'Supprimer le téléchargement et les fichiers', icon: 'trash', danger: true, action: function () { runDelete(m, function () { return deleteDownloads(plan.tasks, true); }, plan.tasks.map(Media.taskPath)); } },
         { label: 'Supprimer uniquement le téléchargement (garder les fichiers)', action: function () { runDelete(m, function () { return deleteDownloads(plan.tasks, false); }, []); } },
         { label: 'Annuler', focus: true, action: closeModal }
       ]
@@ -64,7 +64,7 @@ function confirmDelete(m) {
       title: 'Supprimer définitivement ?',
       text: label(m.name) + '\n\n' + describeTargets(m, plan.targets),
       buttons: [
-        { label: '🗑 Supprimer', danger: true, action: function () { runDelete(m, function () { return deleteFiles(plan.targets); }, plan.targets); } },
+        { label: 'Supprimer', icon: 'trash', danger: true, action: function () { runDelete(m, function () { return deleteFiles(plan.targets); }, plan.targets); } },
         { label: 'Annuler', focus: true, action: closeModal }
       ]
     });
@@ -111,7 +111,7 @@ async function runDelete(m, operation, removedPaths) {
     await operation();
     if (removedPaths.length) removeFromIndex(removedPaths);
     await refreshDownloads();
-    toast('🗑 Supprimé : ' + label(m.name));
+    toast('Supprimé : ' + label(m.name));
     debug('info', 'média supprimé', { chemins: removedPaths.length });
   } catch (e) {
     toast('Suppression impossible : ' + e.message, true);

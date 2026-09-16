@@ -17,7 +17,12 @@ html.playing, html.playing body { background: transparent; }
 .search.editing #query { display: block; }
 .search.editing .search-box { visibility: hidden; }
 
-.btn { display: inline-block; font-size: 32px; padding: 16px 34px; border-radius: 16px; background: var(--panel); color: var(--text); border: 4px solid transparent; white-space: nowrap; transition: transform .12s; }
+.ui-icon { width: 30px; height: 30px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -5px; }
+.ui-icon .icon-fill, .ui-icon.icon-fill, .icon-fill { fill: currentColor; stroke: none; }
+.search-box { display: flex; align-items: center; gap: 14px; }
+.search-box .ui-icon { width: 32px; height: 32px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; font-size: 32px; padding: 16px 34px; border-radius: 999px; background: var(--panel); color: var(--text); border: 1px solid transparent; white-space: nowrap; transition: transform .12s; }
 .btn:focus { border-color: var(--accent); background: var(--panel-2); transform: scale(1.05); }
 .btn.primary { background: var(--accent); }
 .btn.primary:focus { border-color: #fff; }
@@ -34,7 +39,10 @@ html.playing, html.playing body { background: transparent; }
 /* L'affiche recouvre l'icône de remplacement, visible seulement sans affiche (titre déjà affiché sous la vignette) */
 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .poster .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 64px; opacity: .35; }
+.poster .ph .ui-icon { width: 72px; height: 72px; stroke-width: 1.4; }
 .poster .q { position: absolute; top: 10px; left: 10px; font-size: 20px; padding: 3px 10px; border-radius: 8px; background: rgba(10, 15, 28, .85); }
+.poster .q, .badge, .seen, .sub, #osd-tracks, .tm-title, .pf-current { display: inline-flex; align-items: center; gap: 8px; }
+.poster .q .ui-icon, .badge .ui-icon, .seen .ui-icon, .sub .ui-icon, .pf-current .ui-icon { width: 22px; height: 22px; }
 .poster .warn { left: auto; right: 10px; color: var(--warn); }
 /* Vignettes des Médias : badge « vu », téléchargement en cours (affiche assombrie, pourcentage et barre) */
 .poster .q.right { left: auto; right: 10px; }
@@ -75,7 +83,8 @@ html.playing, html.playing body { background: transparent; }
 
 .item { display: flex; align-items: center; gap: 26px; padding: 16px 26px; margin: 0 0 12px; border-radius: 16px; background: var(--panel); border: 4px solid transparent; }
 .item:focus { border-color: var(--accent); background: var(--panel-2); }
-.item .icon { width: 44px; text-align: center; font-size: 34px; }
+.item .icon { width: 44px; display: inline-flex; align-items: center; justify-content: center; text-align: center; font-size: 34px; }
+.item .icon .ui-icon { width: 36px; height: 36px; }
 .item .main { flex: 1; min-width: 0; }
 .item .title { font-size: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item .meta { color: var(--muted); font-size: 24px; white-space: nowrap; }
@@ -93,12 +102,14 @@ html.playing, html.playing body { background: transparent; }
 .modal-text { font-size: 30px; color: var(--muted); margin: 0 0 14px; white-space: pre-line; word-break: break-word; }
 .modal-warn { font-size: 28px; color: var(--warn); margin: 0 0 14px; }
 .modal-buttons { display: flex; flex-direction: column; gap: 16px; margin-top: 30px; }
-.modal-buttons .btn { text-align: left; }
+.modal-buttons .btn { justify-content: flex-start; text-align: left; }
 .modal-buttons .btn.danger { background: #5b1d24; }
 .modal-buttons .btn.danger:focus { background: #b91c1c; border-color: #fff; }
 .seen { display: inline-block; font-size: 22px; padding: 2px 12px; margin-left: 12px; border-radius: 10px; background: #0f3d2e; color: var(--ok); vertical-align: middle; }
 .item .icon.seen { background: none; padding: 0; margin: 0; font-size: 34px; }
 .empty { color: var(--muted); font-size: 32px; padding: 40px 0; }
+.empty-status { display: flex; align-items: center; gap: 14px; }
+.empty-status .ui-icon { width: 34px; height: 34px; }
 .hint { color: var(--muted); font-size: 24px; margin: 8px 0 24px; }
 
 /* ---------- Lecteur ---------- */
@@ -129,6 +140,9 @@ html.playing, html.playing body { background: transparent; }
 .track-menu::-webkit-scrollbar { display: none; }
 .track-menu.open { display: block; }
 .tm-title { font-size: 34px; font-weight: 600; margin: 0 0 12px 10px; }
+.tm-title .ui-icon, #osd-tracks .ui-icon { width: 28px; height: 28px; }
+#osd-tracks { gap: 10px; }
+#osd-tracks .ui-icon:not(:first-child) { margin-left: 22px; }
 .tm-item { display: flex; align-items: center; gap: 16px; font-size: 30px; padding: 14px 20px; margin-bottom: 6px; border-radius: 12px; border: 4px solid transparent; }
 .tm-item:focus { border-color: var(--accent); background: var(--panel-2); }
 .tm-item .check { width: 36px; color: var(--ok); flex: none; }
@@ -194,12 +208,12 @@ html, body {
 .btn, .search-box, .item, .tm-item, .ctl, #skip-intro { transition: transform .12s, background .15s, box-shadow .15s, border-color .15s; }
 
 /* Liserés fins (padding compensé pour garder les mêmes dimensions) */
-.btn { border-width: 2px; padding: 18px 36px; }
-.search-box, #query { border-width: 2px; padding: 18px 30px; border-radius: 22px; }
+.btn { border-width: 1px; padding: 19px 37px; border-color: rgba(255, 255, 255, .1); }
+.search-box, #query { border-width: 1px; padding: 19px 31px; border-radius: 999px; }
 .item { border-width: 2px; padding: 18px 28px; border-radius: 20px; }
 .tm-item { border-width: 2px; padding: 16px 22px; background: transparent; box-shadow: none; }
 .ctl { border-width: 2px; }
-#skip-intro { border-width: 2px; padding: 22px 42px; border-radius: 20px; }
+#skip-intro { border-width: 1px; padding: 22px 42px; border-radius: 999px; }
 .release { border: 1.5px solid var(--glass-edge); border-radius: 22px; }
 .modal-box { border: 1.5px solid var(--glass-edge); border-radius: 34px; background: var(--glass), rgba(16, 24, 46, .55); }
 .track-menu { border: 1.5px solid var(--glass-edge); border-radius: 28px; background: var(--glass), rgba(10, 15, 28, .55); }
@@ -210,17 +224,17 @@ html, body {
 
 /* --- Sélection : verre éclairé, liseré blanc, halo bleu --- */
 .btn:focus, .search-box:focus, .item:focus, .tm-item:focus, .ctl:focus, #skip-intro:focus {
-  background: var(--glass-focus), rgba(59, 130, 246, .38);
+  background: rgba(59, 130, 246, .48);
   border-color: var(--glass-edge-focus);
   box-shadow: var(--glass-inner), var(--glass-glow);
   color: #fff;
 }
 #query { border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); }
 .btn.primary { background: var(--glass), rgba(59, 130, 246, .6); }
-.btn.primary:focus { background: var(--glass-focus), rgba(59, 130, 246, .85); }
-.tab.selected { background: var(--glass), rgba(59, 130, 246, .3); box-shadow: var(--glass-inner), inset 0 -4px 0 rgba(147, 197, 253, .9), var(--glass-drop); }
+.btn.primary:focus { background: rgba(59, 130, 246, .9); }
+.tab.selected { background: var(--glass), rgba(59, 130, 246, .34); border-color: rgba(147, 197, 253, .32); box-shadow: var(--glass-inner), 0 10px 28px rgba(30, 64, 175, .2); }
 .modal-buttons .btn.danger { background: var(--glass), rgba(220, 38, 38, .38); }
-.modal-buttons .btn.danger:focus { background: var(--glass-focus), rgba(220, 38, 38, .75); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
+.modal-buttons .btn.danger:focus { background: rgba(220, 38, 38, .82); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
 
 /* Vignettes : liseré blanc, halo et reflet sur l'affiche sélectionnée (sans flou : elles sont nombreuses) */
 .card:focus { border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 1px rgba(255, 255, 255, .3), 0 20px 54px rgba(59, 130, 246, .5); }
@@ -250,7 +264,7 @@ html, body {
 #modal { background: rgba(4, 7, 15, .45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 
 /* « Épisode suivant » : verre clair, lisible sur la vidéo */
-#next-episode { background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(226, 232, 240, .88)); border-width: 2px; padding: 22px 42px; border-radius: 20px; box-shadow: inset 0 1px 1px #fff, 0 12px 32px rgba(0, 0, 0, .45); }
+#next-episode { background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(226, 232, 240, .88)); border-width: 1px; padding: 22px 42px; border-radius: 999px; box-shadow: inset 0 1px 1px #fff, 0 12px 32px rgba(0, 0, 0, .45); }
 #next-episode:focus { border-color: rgba(59, 130, 246, .9); box-shadow: inset 0 1px 1px #fff, 0 0 0 1px rgba(255, 255, 255, .5), 0 16px 44px rgba(59, 130, 246, .55); }
 
 /* Fond d'ambiance : affiche de la vignette sélectionnée, floutée et assombrie, en fondu enchaîné (ambient.js).
@@ -325,11 +339,12 @@ html.playing #ambient { display: none; }
 .pf-pick { position: relative; width: 132px; height: 132px; padding: 6px; border-radius: 50%; border: 4px solid transparent; transition: transform .12s, border-color .12s, box-shadow .12s; }
 .pf-pick:focus { transform: scale(1.1); border-color: rgba(255, 255, 255, .6); }
 .pf-pick.selected { border-color: var(--glass-edge-focus); box-shadow: var(--glass-glow); }
-.pf-pick.selected::after { content: "✓"; position: absolute; right: -2px; bottom: -2px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 28px; font-weight: 800; display: grid; place-items: center; border: 3px solid #0a0f1c; }
+.pf-pick.selected::after { content: ""; position: absolute; right: -2px; bottom: -2px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: 3px solid #0a0f1c; }
+.pf-pick.selected::before { content: ""; position: absolute; right: 11px; bottom: 15px; z-index: 1; width: 16px; height: 8px; border: solid #fff; border-width: 0 0 4px 4px; transform: rotate(-45deg); }
 .pf-actions { display: flex; align-items: center; gap: 22px; }
 .btn.pf-remove { margin-left: auto; }
 .btn.danger { background: var(--glass), rgba(220, 38, 38, .38); }
-.btn.danger:focus { background: var(--glass-focus), rgba(220, 38, 38, .75); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
+.btn.danger:focus { background: rgba(220, 38, 38, .82); box-shadow: var(--glass-inner), 0 0 0 1px rgba(255, 255, 255, .25), 0 16px 44px rgba(220, 38, 38, .5); }
 
 /* ---------- Bandeau d'accueil (exclusivités populaires) ---------- */
 /* Le bandeau occupe l'écran dès y = 0. L'en-tête, sorti du flux, reste posé par-dessus à sa position habituelle.
@@ -366,8 +381,8 @@ html.playing #ambient { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Filtres : tiroir animé entre l'en-tête et les vignettes ---------- */
-.btn .ico { width: 30px; height: 30px; fill: currentColor; vertical-align: -5px; margin-right: 10px; }
-.btn .count { display: inline-block; min-width: 38px; margin-left: 12px; padding: 0 10px; border-radius: 19px; background: var(--accent); color: #fff; font-size: 24px; line-height: 38px; text-align: center; vertical-align: 3px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45); }
+.btn .ico { width: 30px; height: 30px; fill: currentColor; vertical-align: -5px; }
+.btn .count { display: inline-block; min-width: 38px; margin-left: 2px; padding: 0 10px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 24px; line-height: 38px; text-align: center; vertical-align: 3px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45); }
 .drawer { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px); margin-bottom: 0; transition: grid-template-rows .38s cubic-bezier(.2, .8, .2, 1), opacity .28s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin .38s ease; }
 .drawer.open { grid-template-rows: 1fr; opacity: 1; transform: none; margin-bottom: 18px; }
 .drawer-inner { min-height: 0; overflow: hidden; margin: 0 -24px; padding: 0 24px; }
@@ -385,6 +400,12 @@ html.playing #ambient { display: none; }
 .scan-status { position: absolute; left: 2px; top: 100%; margin-top: 2px; font-size: 22px; font-weight: 400; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
 /* Bande-annonce : bouton de la fiche, masqué tant qu'aucune vidéo n'est trouvée */
 .btn.off { display: none; }
+
+/* Médias : la liste occupe tout l'écran derrière l'en-tête. Au repos, son padding place la première rangée
+   sous les boutons ; en défilant, les vignettes passent naturellement derrière leur verre translucide. */
+#downloads { padding-top: 0; }
+#downloads > .top { position: absolute; top: 40px; left: 80px; right: 80px; margin-bottom: 0; }
+#downloads > .list-wrap { padding-top: 180px; }
 
 /* Recommandations : introduction sur toute la largeur, raison sous chaque vignette ; onglets de type plus compacts (7 onglets) */
 .grid .reco-intro { grid-column: 1 / -1; margin-bottom: -6px; font-size: 26px; color: var(--muted); }
@@ -404,4 +425,56 @@ html.playing #ambient { display: none; }
 .picker-title { margin: 6px 0 10px 14px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
 .picker-item { display: flex; align-items: center; gap: 14px; padding: 12px 20px; margin-bottom: 4px; border-radius: 16px; border: 2px solid transparent; font-size: 30px; transition: background .12s, box-shadow .12s, border-color .12s; }
 .picker-item .check { width: 30px; flex: none; color: var(--ok); }
-.picker-item:focus { background: var(--glass-focus), rgba(59, 130, 246, .38); border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); }
+.picker-item:focus { background: rgba(59, 130, 246, .48); border-color: var(--glass-edge-focus); box-shadow: var(--glass-inner), var(--glass-glow); }
+
+/* ---------- Système de boutons unifié ----------
+   Tout élément actionnable est une capsule, ou un cercle quand il ne contient qu'une icône. */
+.item, .tm-item, .picker-item {
+  border-width: 1px;
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, .08);
+}
+.item { padding: 19px 30px; }
+.tm-item, .picker-item { padding: 15px 24px; }
+.item:focus, .tm-item:focus, .picker-item:focus {
+  border-color: rgba(255, 255, 255, .72);
+  background: rgba(59, 130, 246, .48);
+  box-shadow: var(--glass-inner), var(--glass-glow);
+}
+.item .more-btn {
+  width: 58px;
+  height: 58px;
+  border-width: 1px;
+  border-radius: 50%;
+  border-color: rgba(255, 255, 255, .08);
+}
+.ctl {
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, .1);
+}
+.ctl:focus {
+  border-color: rgba(255, 255, 255, .8);
+  box-shadow: var(--glass-inner), var(--glass-glow);
+}
+.ctl::after, #seek-label {
+  border-width: 1px;
+  border-radius: 999px;
+}
+#seekbar {
+  border-width: 1px;
+  border-radius: 999px;
+}
+#seekbar > #osd-bar { border-radius: 999px; }
+#next-episode, #skip-intro {
+  align-items: center;
+  gap: 12px;
+  border-width: 1px;
+  border-radius: 999px;
+}
+#next-episode.show, #skip-intro.show { display: flex; }
+#next-episode .ui-icon, #skip-intro .ui-icon { width: 32px; height: 32px; }
+.who-btn, .pf-tile, .pf-pick { border-width: 1px; }
+.pf-tile:focus, .pf-pick:focus { border-color: rgba(255, 255, 255, .72); }
+.pf-add span { border-width: 2px; }
+#nick-input { border-width: 1px; border-radius: 999px; }
+.tm-item .check .ui-icon, .picker-item .check .ui-icon { width: 26px; height: 26px; }

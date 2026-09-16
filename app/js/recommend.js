@@ -303,7 +303,7 @@ async function loadForYou(force) {
   var signature = historySignature(loadHistory()), cached = loadRecos();
   var result = !force && cached && cached.signature === signature && Date.now() - cached.at < RECOS_TTL_MS ? cached : null;
   if (!result) {
-    grid.innerHTML = '<div class="empty">✨ Calcul de vos recommandations…</div>';
+    grid.innerHTML = '<div class="empty empty-status">' + iconSvg('sparkle') + '<span>Calcul de vos recommandations…</span></div>';
     var started = Date.now();
     try {
       result = await computeRecommendations();

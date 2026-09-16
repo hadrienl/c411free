@@ -115,8 +115,8 @@ function openProfiles(focusId) {
     return '<div class="pf-profile">'
       + '<span class="pf-tile" data-f tabindex="-1" id="pf-' + x.id + '" data-profile="' + x.id + '"><span class="avatar">' + avatarSvg(x.avatar) + '</span></span>'
       + '<div class="pf-name">' + esc(x.name) + '</div>'
-      + '<div class="pf-current">' + (x.id === p.currentId ? '✓ profil actuel' : '') + '</div>'
-      + '<span class="btn pf-edit" data-f tabindex="-1" id="pf-edit-' + x.id + '" data-edit-profile="' + x.id + '">✎ Modifier</span>'
+      + '<div class="pf-current">' + (x.id === p.currentId ? iconSvg('check') + ' profil actuel' : '') + '</div>'
+      + '<span class="btn pf-edit" data-f tabindex="-1" id="pf-edit-' + x.id + '" data-edit-profile="' + x.id + '">' + iconSvg('edit') + '<span>Modifier</span></span>'
       + '</div>';
   }).join('')
     + '<div class="pf-profile"><span class="pf-tile pf-add" data-f tabindex="-1" id="pf-add" data-add-profile="1"><span>+</span></span><div class="pf-name dim">Ajouter</div></div>';
@@ -178,7 +178,7 @@ function openNickname() {
   $('nick-wrap').classList.add('editing');
   $('nick-input').value = state.profileForm ? state.profileForm.name : '';
   $('nick-input').focus();
-  toast('⌨️ Tapez le surnom puis « Terminé » · RETOUR pour annuler');
+  toast('Tapez le surnom puis « Terminé » · RETOUR pour annuler');
 }
 
 function closeNickname(submit) {
@@ -225,7 +225,7 @@ function confirmRemoveProfile() {
     title: 'Supprimer le profil « ' + x.name + ' » ?',
     text: 'Ses épisodes vus, reprises, séries suivies et préférences seront effacés.\nLes fichiers ne sont pas touchés.',
     buttons: [
-      { label: '🗑 Supprimer le profil', danger: true, action: function () {
+      { label: 'Supprimer le profil', icon: 'trash', danger: true, action: function () {
         var all = loadProfiles(), wasCurrent = all.currentId === x.id;
         removeProfile(all, x.id);
         saveProfiles(all);

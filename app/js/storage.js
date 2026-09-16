@@ -56,11 +56,11 @@ function markWatched(task, fileName) {
   debug('info', 'fichier marqué vu', { task: key, file: fileName });
 }
 
-// « 👁 Vu » pour un film, « 👁 3/10 vus » pour une saison
+// Libellé de visionnage pour un film ou une saison (l'icône est ajoutée au rendu).
 function watchedBadge(task) {
   var entry = watchedEntry(task), seen = Object.keys(entry.files).length;
   if (!seen) return '';
-  return entry.total > 1 ? '👁 ' + seen + '/' + entry.total + ' vus' : '👁 Vu';
+  return entry.total > 1 ? seen + '/' + entry.total + ' vus' : 'Vu';
 }
 
 // ---------- Reprise de lecture (positions mémorisées sur la TV) ----------
