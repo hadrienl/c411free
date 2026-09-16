@@ -67,19 +67,19 @@ html.playing, html.playing body { background: transparent; }
 .backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,15,28,.97) 0%, rgba(10,15,28,.9) 45%, rgba(10,15,28,.55) 100%), linear-gradient(0deg, rgba(10,15,28,1) 0%, rgba(10,15,28,0) 40%); }
 .detail-body { position: relative; display: flex; gap: 60px; padding: 70px 90px; height: 100%; }
 .d-poster { width: 400px; height: 600px; object-fit: cover; border-radius: 18px; flex: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); background: var(--panel); }
-.d-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.d-info h1 { font-size: 64px; margin: 0 0 10px; line-height: 1.1; }
-.d-meta { color: var(--muted); font-size: 30px; margin-bottom: 22px; }
-.d-overview { font-size: 30px; margin: 0 0 20px; max-height: 250px; overflow: hidden; }
-.d-people { font-size: 26px; color: var(--muted); margin-bottom: 26px; }
+.d-info { flex: 1; min-width: 0; display: flex; flex-direction: column; } /* pas d’overflow hidden : le halo du bouton sélectionné (scale) déborde du bord gauche */
+.d-info h1 { font-size: 64px; margin: 0 0 10px; line-height: 1.1; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.d-meta { color: var(--muted); font-size: 30px; margin-bottom: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-overview { font-size: 30px; margin: 0 0 20px; max-height: 250px; overflow: hidden; flex: 0 1 auto; min-height: 0; } /* premier bloc à rétrécir quand la fiche est trop haute */
+.d-people { font-size: 26px; color: var(--muted); margin-bottom: 26px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; flex: none; }
 .d-people b { color: var(--text); font-weight: 600; }
-.release { background: rgba(21, 31, 54, .85); border-radius: 18px; padding: 22px 28px; margin-bottom: 30px; }
-.r-name { font-size: 24px; color: var(--muted); word-break: break-all; margin-bottom: 12px; }
+.release { background: rgba(21, 31, 54, .85); border-radius: 18px; padding: 22px 28px; margin-bottom: 30px; flex: none; }
+.r-name { font-size: 24px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
 .badge { display: inline-block; font-size: 24px; padding: 4px 14px; border-radius: 10px; background: #26375c; margin: 0 10px 8px 0; }
 .badge.ok { background: #0f3d2e; color: var(--ok); }
 .badge.warn { background: #4a340b; color: var(--warn); }
-.d-audio { font-size: 24px; color: var(--muted); margin-top: 6px; }
-.actions { display: flex; gap: 24px; }
+.d-audio { font-size: 24px; color: var(--muted); margin-top: 6px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.actions { display: flex; gap: 24px; flex: none; }
 
 .item { display: flex; align-items: center; gap: 26px; padding: 16px 26px; margin: 0 0 12px; border-radius: 16px; background: var(--panel); border: 4px solid transparent; }
 .item:focus { border-color: var(--accent); background: var(--panel-2); }
@@ -417,6 +417,8 @@ html.playing #ambient { display: none; }
 /* Suivi des séries : onglet séparé des types, pastille des nouveautés */
 .tab.follow { margin-left: 18px; }
 .poster .q.fresh { background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .06)), rgba(59, 130, 246, .85); border-color: rgba(191, 219, 254, .7); color: #fff; font-weight: 600; }
+/* File d'attente « plus tard » : juste l'icône, pastille resserrée sur fond neutre translucide (gabarit de .q) */
+.poster .q.later { padding: 4px 8px; }
 /* Tris des Médias : listes déroulantes compactes dans l'en-tête */
 #dl-sorts .btn.select { min-width: 0; gap: 16px; }
 

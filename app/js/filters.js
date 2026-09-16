@@ -11,11 +11,13 @@ var FILTER_TYPES = [
   { subcat: '1,2', label: 'Animation' },
   { subcat: '4,57', label: 'Documentaires' },
   { subcat: 'foryou', label: 'Pour vous' }, // recommandations du profil (pas un filtre c411)
-  { subcat: 'follow', label: 'Suivi' }      // séries regardées et leurs nouveaux épisodes (pas un filtre c411)
+  { subcat: 'follow', label: 'Suivi' },     // séries regardées et leurs nouveaux épisodes (pas un filtre c411)
+  { subcat: 'later', label: 'En attente' }  // file d'attente « plus tard » (pas un filtre c411)
 ];
 
 function isFollowMode(f) { return !!f && f.subcat === 'follow'; }
 function isForYouMode(f) { return !!f && f.subcat === 'foryou'; }
+function isLaterMode(f) { return !!f && f.subcat === 'later'; }
 var FILTER_ICON = '<svg class="ico" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>';
 
 function emptyFilters() { return { subcat: '', year: '', genre: '' }; }

@@ -36,13 +36,13 @@ $('home-grid').addEventListener('click', onGridClick('home'));
 $('results-grid').addEventListener('click', onGridClick('results'));
 $('open-downloads').addEventListener('click', function () { state.lastFocus.downloads = null; openDownloads(); });
 $('d-download').addEventListener('click', startDownload);
+$('d-later').addEventListener('click', toggleLater);
 $('d-trailer').addEventListener('click', function () {
   var source = state.detail && state.detail.trailer;
   if (!source) return;
   if (source.kind === 'allocine') play({ name: 'Bande-annonce · ' + state.detail.trailerTitle, url: source.url }, 'detail', null);
   else openTrailerInYouTube(source.videoId);
 });
-$('d-back').addEventListener('click', function () { show(state.detailFrom); });
 
 try {
   ['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind'].forEach(function (k) { tizen.tvinputdevice.registerKey(k); });

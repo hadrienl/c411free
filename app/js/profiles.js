@@ -4,7 +4,7 @@
 var PROFILES_KEY = 'c411free.profiles';
 var PROFILE_NAME_MAX = 16;
 // Données propres à chaque profil (les autres réglages sont communs : médias, filtres, affiches, génériques appris…)
-var PROFILE_DATA_KEYS = ['c411free.watched', 'c411free.positions', 'c411free.trackPrefs', 'c411free.series', 'c411free.history', 'c411free.recos'];
+var PROFILE_DATA_KEYS = ['c411free.watched', 'c411free.positions', 'c411free.trackPrefs', 'c411free.series', 'c411free.history', 'c411free.recos', 'c411free.later'];
 
 // Dix avatars dessinés (viewBox 100 × 100, fond ajouté par avatarSvg)
 var AVATARS = {
@@ -129,8 +129,10 @@ function applyProfileChange() {
   ensureSeriesBackfill();
   ensureHistoryBackfill();
   state.follow.list = [];
+  forgetLater();
   if (isFollowMode(state.filters)) loadFollowed();
   if (isForYouMode(state.filters)) loadForYou();
+  if (isLaterMode(state.filters)) loadLaterList();
   debug('info', 'profil sélectionné', { id: loadProfiles().currentId });
 }
 

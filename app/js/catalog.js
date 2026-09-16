@@ -63,12 +63,16 @@ function cardHtml(prefix, t, note) {
   var img = t.posterUrl
     ? '<img class="fade" src="' + esc(poster(t.posterUrl, 'w342')) + '" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">'
     : '';
+  var fresh = prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash];
+  var rightBadge = fresh ? '<span class="q right fresh">Nouveau</span>'
+    : (isLater(t.infoHash) && !isLaterMode(state.filters)) ? '<span class="q right later">' + iconSvg('bookmark') + '</span>'
+    : '';
   return '<div class="card" data-f tabindex="-1" id="' + prefix + t.infoHash + '" data-hash="' + t.infoHash + '">'
     + '<div class="poster"><div class="ph">' + iconSvg('movie') + '</div>' + img
     + '<div class="badges">'
     + (resolution(t.name) ? '<span class="q">' + resolution(t.name) + '</span>' : '')
     + (nameAudioOk(t.name) ? '' : '<span class="q warn">' + iconSvg('warning') + 'son</span>')
-    + (prefix === 'r-' && state.results.newHashes && state.results.newHashes[t.infoHash] ? '<span class="q right fresh">Nouveau</span>' : '')
+    + rightBadge
     + '</div></div>'
     + '<div class="cap">' + esc(text) + '</div>'
     + '<div class="sub' + (note ? ' reason' : '') + '">' + esc(note || [shortLang(t.language, t.name), gb(t.size), '▲ ' + (t.seeders || 0)].filter(Boolean).join(' · ')) + '</div>'
@@ -232,9 +236,17 @@ function loadMoreIfNeeded(gridId) {
   if (gridId === 'home-grid') loadHome(false); else search(false);
 }
 
+function loadLaterList() {
+  var home = state.home;
+  home.generation = (home.generation || 0) + 1; home.items = laterList(); home.done = true; home.loading = false; // coupe le défilement infini
+  $('home-grid').innerHTML = home.items.map(function (t) { return cardHtml('h-', t); }).join('')
+    || '<div class="empty">Aucun titre en attente : sur la fiche d\'un film ou d\'une série, choisissez « Plus tard ».</div>';
+}
+
 async function loadHome(reset) {
   if (isForYouMode(state.filters)) { if (reset) loadForYou(); return; } // onglet Pour vous : recommandations du profil
   if (isFollowMode(state.filters)) { if (reset) loadFollowed(); return; } // onglet Suivi : séries suivies à la place des nouveautés
+  if (isLaterMode(state.filters)) { if (reset) loadLaterList(); return; } // onglet En attente : file d'attente « plus tard »
   try {
     var params = Object.assign({ category: 1, sortBy: 'createdAt', sortOrder: 'desc' }, filterParams(state.filters));
     if (await loadPage(state.home, 'home-grid', 'h-', params, reset)) loadMoreIfNeeded('home-grid'); // page trop courte pour remplir l'écran
@@ -278,7 +290,8 @@ async function openDetail(hash, from) {
   $('d-release').textContent = item.name || '';
   $('d-badges').innerHTML = '';
   $('d-audio').textContent = '';
-  state.detail = { infoHash: hash, name: item.name, size: item.size };
+  state.detail = { infoHash: hash, name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl };
+  renderLaterButton();
   $('d-trailer').classList.add('off');
   show('detail', $('d-download'));
 
@@ -287,7 +300,13 @@ async function openDetail(hash, from) {
     if (state.detail.infoHash !== hash) return;
     var meta = d.metadata || {};
     var tmdb = meta.tmdbData || {};
-    state.detail = { infoHash: hash, name: d.name, size: d.size };
+    state.detail = {
+      infoHash: hash, name: d.name, size: d.size,
+      seeders: d.seeders != null ? d.seeders : item.seeders,
+      language: d.language || item.language,
+      posterUrl: tmdb.posterUrl || item.posterUrl
+    };
+    renderLaterButton();
 
     // Bande-annonce cherchée en arrière-plan (AlloCiné, sinon YouTube) : le bouton apparaît quand une vidéo est trouvée
     var trailerTitle = tmdb.title || n.title;
@@ -337,6 +356,26 @@ async function openDetail(hash, from) {
   }
 }
 
+function renderLaterButton() {
+  buttonContent('d-later', 'bookmark', isLater(state.detail.infoHash) ? 'Annuler l\'attente' : 'Plus tard');
+}
+
+function toggleLater() {
+  var d = state.detail;
+  if (!d) return;
+  var title = prettyName(d.name).title;
+  if (isLater(d.infoHash)) {
+    removeLater(d.infoHash);
+    toast('Retiré de la file d\'attente : ' + title);
+  } else {
+    addLater(d);
+    toast('À télécharger plus tard : ' + title);
+  }
+  renderLaterButton();
+  if (state.detailFrom === 'home' && isLaterMode(state.filters)) loadLaterList(); // accueil à jour au retour, sans voler le focus
+  $('d-later').focus();
+}
+
 function onGridClick(from) {
   return function (e) {
     var series = e.target.closest('[data-series]');
@@ -364,13 +403,15 @@ async function startDownload() {
     var added = await fbx('/downloads/add', { method: 'POST', body: form });
     debug('info', 'téléchargement ajouté', { id: added.id, name: d.name });
     toast('Ajouté à la Freebox : ' + prettyName(d.name).title);
+    removeLater(d.infoHash); // signet honoré : plus besoin de la file d'attente
+    if (state.detailFrom === 'home' && isLaterMode(state.filters)) loadLaterList(); // accueil à jour au retour
     state.lastFocus.downloads = null;
     openDownloads();
   } catch (e) {
     toast('Échec : ' + e.message, true);
   } finally {
     downloading = false;
-    buttonContent('d-download', 'download', 'Télécharger sur la Freebox');
+    buttonContent('d-download', 'download', 'Télécharger');
   }
 }
 
