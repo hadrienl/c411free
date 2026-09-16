@@ -52,6 +52,13 @@ test('défilement : juste ce qu\'il faut pour montrer l\'élément avec sa marge
   assert.ok(app.easeOutCubic(0.5) > 0.8, 'ralentit à l\'arrivée');
 });
 
+test('défilement sous un header : la rangée focalisée reste sous les boutons', () => {
+  // Header superposé sur les 124 premiers pixels, marge visuelle de 60 px.
+  assert.equal(app.scrollTargetBelowInset(900, 1300, 750, 900, 124, 60), 716);
+  assert.equal(900 - 716, 184, 'haut de la vignette = header 124 + marge 60');
+  assert.equal(app.scrollTargetBelowInset(900, 1300, 700, 900, 124, 60), null, 'aucun mouvement si la vignette est déjà dégagée');
+});
+
 test('grille de vignettes : même colonne en ▲ ▼, pas de saut de rangée en ◀ ▶', () => {
   const cards = [0, 1, 2].flatMap((row) => [0, 1, 2, 3].map((col) => box(100 + col * 250, 500 + row * 420, 230, 400)));
   assert.equal(pick(cards[1], 'right', cards), cards[2]);

@@ -168,14 +168,20 @@ function reveal(el) {
   if (!wrap) { el.scrollIntoView({ block: 'nearest' }); return; }
   var w = wrap.getBoundingClientRect(), r = el.getBoundingClientRect();
   var elTop = r.top - w.top + wrap.scrollTop, elBottom = r.bottom - w.top + wrap.scrollTop;
+  // Sur l'accueil et les Médias, le header est superposé à la zone défilante. Sa hauteur ne fait donc pas
+  // partie de la zone réellement visible : une rangée sélectionnée doit rester entièrement sous les boutons.
+  var screen = wrap.closest('.screen'), top = screen && screen.querySelector('.top');
+  var topInset = top && (screen.id === 'home' || screen.id === 'downloads')
+    ? Math.max(0, top.getBoundingClientRect().bottom - w.top)
+    : 0;
   // Positions dans le contenu (indépendantes du défilement) ; animation en cours : on raisonne depuis sa cible
   var base = wrap.scrollTarget != null ? wrap.scrollTarget : wrap.scrollTop;
-  var target = scrollTargetFor(elTop, elBottom, base, wrap.clientHeight, SCROLL_MARGIN_PX);
-  // Bandeau d'accueil : jamais à moitié visible (titre coupé sous l'en-tête) ; tout en haut, ou juste en dessous
+  var target = scrollTargetBelowInset(elTop, elBottom, base, wrap.clientHeight, topInset, SCROLL_MARGIN_PX);
+  // En quittant le bandeau, sa portion restante demeure derrière le header plutôt que de masquer la première rangée.
   var hero = wrap.querySelector('#hero:not(.off)');
   if (target != null && hero && el !== hero) {
     var heroBottom = hero.getBoundingClientRect().bottom - w.top + wrap.scrollTop;
-    if (target > 0 && target < heroBottom) target = Math.min(heroBottom, elTop - SCROLL_MARGIN_PX);
+    if (target > 0 && target < heroBottom) target = Math.min(heroBottom, elTop - topInset - SCROLL_MARGIN_PX);
   }
   if (target != null) animateScroll(wrap, target);
 }

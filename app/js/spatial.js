@@ -14,6 +14,11 @@ function scrollTargetFor(elTop, elBottom, scrollTop, viewHeight, margin) {
   return null;
 }
 
+// Même calcul lorsqu'une partie haute de la zone défilante est masquée par un header superposé.
+function scrollTargetBelowInset(elTop, elBottom, scrollTop, viewHeight, topInset, margin) {
+  return scrollTargetFor(elTop - topInset, elBottom - topInset, scrollTop, viewHeight - topInset, margin);
+}
+
 // Courbe de défilement : démarre vite, ralentit en douceur à l'arrivée
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
