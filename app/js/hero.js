@@ -127,6 +127,7 @@ function updateHeroVisibility() {
   var hero = $('hero');
   if (!visible && document.activeElement === hero) $('open-filters').focus();
   hero.classList.toggle('off', !visible);
+  hero.parentNode.classList.toggle('hero-off', !visible);
 }
 
 function openHeroItem() {

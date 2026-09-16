@@ -352,6 +352,8 @@ html.playing #ambient { display: none; }
 #home { padding-top: 0; }
 #home > .top { position: absolute; top: 40px; left: 80px; right: 80px; margin-bottom: 0; }
 #home > .drawer.open { margin-top: 128px; }
+#home > .grid-wrap.hero-off { padding-top: 180px; }
+#home > .drawer.open + .grid-wrap.hero-off { padding-top: 34px; }
 /* Pleine largeur en tête de la zone défilante : il disparaît en douceur quand on descend dans la grille */
 #hero { position: relative; height: 640px; margin: -34px -80px 40px; overflow: hidden; outline: none; transition: box-shadow .2s; }
 #hero.off { display: none; }
