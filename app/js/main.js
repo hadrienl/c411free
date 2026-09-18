@@ -34,6 +34,9 @@ $('home-grid').parentNode.addEventListener('scroll', function () { loadMoreIfNee
 $('home-grid').addEventListener('click', onGridClick);
 $('d-download').addEventListener('click', startDownload);
 $('d-later').addEventListener('click', toggleLater);
+$('d-related').addEventListener('click', openRelated);
+$('d-prev').addEventListener('click', function () { openNeighbour('prev'); });
+$('d-next').addEventListener('click', function () { openNeighbour('next'); });
 $('d-trailer').addEventListener('click', function () {
   var source = state.detail && state.detail.trailer;
   if (!source) return;

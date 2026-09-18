@@ -187,6 +187,7 @@ function setSection(section) {
 // Changement de sous-onglet : la recherche en cours est conservée et s'applique au nouvel onglet
 function setTab(tab, focusSegment) {
   if (tab !== 'follow') state.seriesOpen = null;
+  state.related = null;
   state.tab[state.section] = tab;
   renderTopbar();
   if (state.section === 'library') { renderDownloads(); $('downloads-list').parentNode.scrollTop = 0; }
@@ -197,6 +198,7 @@ function setTab(tab, focusSegment) {
 // Recherche validée : elle ne vaut que pour la section affichée (une requête vide l'efface)
 function runSearch(q) {
   state.query[state.section] = q;
+  if (state.section === 'catalog') state.related = null;
   renderTopbar();
   if (state.section === 'library') { renderDownloads(); $('downloads-list').parentNode.scrollTop = 0; }
   else refreshHome(true);
@@ -205,6 +207,7 @@ function runSearch(q) {
 // RETOUR sur le Catalogue : recherche, série ouverte, haut de la liste, onglet Accueil, puis sortie de l'app
 function backFromCatalog() {
   if (filtersOpen()) toggleFilters(false); // RETOUR referme d'abord le panneau de filtres
+  else if (state.related) closeRelated(); // versions d'un titre ouvertes depuis une fiche
   else if (state.query.catalog) runSearch('');
   else if (state.seriesOpen != null) { state.seriesOpen = null; refreshHome(true); }
   else if (scrollListToTop()) { /* liste défilée : remontée en haut, on reste sur l'écran */ }

@@ -174,7 +174,7 @@ function heroTransition(visibleBefore, visibleAfter, onHome) {
 // que collapsed : la grille glisse en un seul mouvement, synchronisé avec le bandeau (même durée/courbe).
 // Le minuteur ne sert plus qu'à poser off (display: none) une fois le bandeau devenu invisible.
 function updateHeroVisibility() {
-  var visible = state.hero.items.length > 0 && onCatalogTab('home') && !state.query.catalog && !activeFilterCount(state.filters);
+  var visible = state.hero.items.length > 0 && onCatalogTab('home') && !state.related && !state.query.catalog && !activeFilterCount(state.filters);
   var hero = $('hero');
   if (!visible && document.activeElement === hero && $('tab-' + currentTab())) $('tab-' + currentTab()).focus();
 
