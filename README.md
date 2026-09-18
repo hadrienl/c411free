@@ -16,7 +16,7 @@ App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à l
 - **Bande-annonce** dans la fiche : MP4 d'AlloCiné lu dans le lecteur de l'app (RETOUR revient à la fiche), sinon ouverture de l'app YouTube de la TV.
 - **Téléchargement** : envoi du .torrent au téléchargeur de la Freebox Ultra.
 - **Bibliothèque** : toutes les vidéos des disques de la Freebox, en sous-onglets **Tout**, **Films** et **Séries**, en vignettes ou en liste, triées au choix (date, nom, taille), avec la progression des téléchargements en cours, les vidéos déjà vues et la suppression (appui long sur OK). Les disques sont réanalysés tout seuls (au plus toutes les 10 min, et à la fin d'un téléchargement).
-- **Lecteur intégré** (AVPlay, décodeur matériel) : pistes audio et sous-titres mémorisés, barre de lecture, reprise là où on s'était arrêté, « Passer le générique » (chapitres du fichier, sinon générique appris en sautant une fois sur un autre épisode de la série), épisode suivant à l'arrivée du générique de fin.
+- **Lecteur intégré** (AVPlay, décodeur matériel) : pistes audio et sous-titres mémorisés, barre de lecture, reprise là où on s'était arrêté, « Passer le générique » (chapitres du fichier, sinon générique appris en sautant une fois sur un autre épisode de la série), épisode suivant à l'arrivée du générique de fin ; sans fichier suivant sur les disques, « Chercher l'épisode suivant » affiche dans le Catalogue les releases c411 de l'épisode (ou de la saison) qui suit.
 
 L'app est autonome sur la TV : elle parle directement à c411 et à la Freebox, sans serveur.
 

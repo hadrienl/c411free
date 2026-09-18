@@ -87,3 +87,12 @@ test('recherches ciblées des épisodes voisins', () => {
   assert.deepEqual(plain(app.neighbourQueries('Show.S01.1080p')), ['S02']);
   assert.deepEqual(plain(app.neighbourQueries('Film.2020.1080p')), []);
 });
+
+test('suite d\'un épisode : toutes les releases de l\'épisode ou de la saison qui suit', () => {
+  const list = [rel('Show.S01E05.MULTI.1080p'), rel('Show.S01E05.VOSTFR.2160p'), rel('Show.S01E06.MULTI.1080p'), rel('Show.S02.MULTI.1080p')];
+  const next = app.nextReleases({ name: 'Show.S01E04.MULTI.1080p.mkv', infoHash: '' }, list);
+  assert.equal(app.episodeCode(next.info), 'S01E05');
+  assert.deepEqual(next.releases.map((r) => r.name), ['Show.S01E05.MULTI.1080p', 'Show.S01E05.VOSTFR.2160p']);
+  assert.equal(app.episodeCode(app.nextReleases({ name: 'Show.S01E06.mkv', infoHash: '' }, list).info), 'Saison 2');
+  assert.equal(app.nextReleases({ name: 'Show.S02E01.mkv', infoHash: '' }, list), null);
+});

@@ -406,7 +406,7 @@ async function openDetail(hash, known, focusId) {
 }
 
 // ---------- Toutes les versions d'un titre, épisodes voisins ----------
-state.related = null; // versions d'un titre affichées en place dans la grille de l'accueil : { title, hash, items }
+state.related = null; // versions d'un titre affichées en place dans la grille de l'accueil : { title, items, heading }
 
 function detailRef(d) { return relatedRef(d.name, d.titles, d.posterUrl, d.year); }
 
@@ -437,21 +437,47 @@ function openNeighbour(dir) {
 
 // Toutes les releases du film ou de la série, des plus récentes aux plus anciennes, à la place de la grille de l'accueil.
 // Les filtres du Catalogue ne s'y appliquent pas : c'est une demande explicite depuis une fiche.
-async function openRelated() {
+function openRelated() {
   var d = state.detail;
   if (!d || !d.name) return;
-  var rel = { title: d.title || prettyName(d.name).title, hash: d.infoHash, items: null };
+  var title = d.title || prettyName(d.name).title;
+  showRelatedView(title, 'Recherche des versions de « ' + title + ' » sur c411…', async function () {
+    return { items: (await searchRelated(detailRef(d))).releases };
+  });
+}
+
+// Fin d'un épisode sans fichier suivant sur les disques : releases c411 de l'épisode (ou de la saison) qui suit.
+// src : { name } (nom du fichier joué), title, alias ({ name, poster } de la release c411 d'origine, si connue)
+function openNextEpisodeSearch(src) {
+  var info = episodeInfo(src.name);
+  var code = episodeCode(info);
+  showRelatedView(src.title, 'Recherche de l\'épisode qui suit ' + code + ' sur c411…', async function () {
+    var alias = src.alias || {};
+    var ref = relatedRef(src.name, [src.title, alias.name], alias.poster ? 'tmdb/' + alias.poster : '', '');
+    var found = await searchNeighbours(ref, { name: src.name, infoHash: '' });
+    var next = nextReleases({ name: src.name, infoHash: '' }, found.releases);
+    if (next) return { items: next.releases, heading: '« ' + src.title + ' » · ' + episodeCode(next.info) + ' · ' + next.releases.length + ' version(s)' };
+    return { items: found.releases, heading: '« ' + src.title + ' » · rien après ' + code + ' sur c411 pour l\'instant · toutes les versions' };
+  });
+}
+
+// Vue des versions d'un titre dans la grille du Catalogue ; load() renvoie { items, heading? }
+async function showRelatedView(title, pending, load) {
+  var rel = { title: title, items: null, heading: '' };
   state.related = rel;
+  state.section = 'catalog';
+  renderTopbar();
   var b = state.results;
   b.generation = (b.generation || 0) + 1; b.loading = false; b.done = true; b.q = ''; b.items = []; b.newHashes = null;
   updateHeroVisibility();
-  renderHomeTitle('Toutes les versions de « ' + rel.title + ' »', 'RETOUR revenir');
-  $('home-grid').innerHTML = '<div class="empty">Recherche des versions de « ' + esc(rel.title) + ' » sur c411…</div>';
+  renderHomeTitle(pending, 'RETOUR revenir');
+  $('home-grid').innerHTML = '<div class="empty">' + esc(pending) + '</div>';
   $('home-grid').parentNode.scrollTop = 0;
   var tab = $('tab-' + currentTab());
   show('home', tab);
   try {
-    rel.items = (await searchRelated(detailRef(d))).releases;
+    var res = await load();
+    rel.items = res.items; rel.heading = res.heading || '';
   } catch (e) {
     rel.items = [];
     toast('Recherche impossible : ' + e.message, true);
@@ -467,9 +493,9 @@ function renderRelated() {
   if (!rel.items) return; // recherche en cours
   b.items = rel.items; b.total = b.items.length; b.lastBatch = b.items.length;
   b.newHashes = null;
-  renderHomeTitle('« ' + rel.title + ' » · ' + b.total + ' version(s), des plus récentes aux plus anciennes', 'RETOUR revenir');
+  renderHomeTitle(rel.heading || '« ' + rel.title + ' » · ' + b.total + ' version(s), des plus récentes aux plus anciennes', 'RETOUR revenir');
   renderGrid('home-grid', 'h-', b, false);
-  if (!b.items.length) $('home-grid').innerHTML = '<div class="empty">Aucune autre version trouvée sur c411.</div>';
+  if (!b.items.length) $('home-grid').innerHTML = '<div class="empty">Aucune version trouvée sur c411.</div>';
 }
 
 function closeRelated() {

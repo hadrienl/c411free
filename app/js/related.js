@@ -85,6 +85,14 @@ function neighbourRelease(current, releases, dir) {
   return near ? pick(ofRank(nearest)) : null;
 }
 
+// Releases de l'épisode (ou de la saison) qui suit, toutes qualités : { info, releases } ou null
+function nextReleases(current, releases) {
+  var n = neighbourRelease(current, releases, 1);
+  if (!n) return null;
+  var code = episodeCode(n.info);
+  return { info: n.info, releases: releases.filter(function (r) { return episodeCode(episodeInfo(r.name)) === code; }) };
+}
+
 // Recherches ciblées quand la liste des releases est incomplète (titre trop courant, plus de 300 releases)
 function neighbourQueries(name) {
   var info = episodeInfo(name);
@@ -129,5 +137,5 @@ async function searchNeighbours(ref, current) {
     }));
     releases = relatedReleases(ref, releases.concat([].concat.apply([], extra)));
   }
-  return { prev: neighbourRelease(current, releases, -1), next: neighbourRelease(current, releases, 1) };
+  return { prev: neighbourRelease(current, releases, -1), next: neighbourRelease(current, releases, 1), releases: releases };
 }

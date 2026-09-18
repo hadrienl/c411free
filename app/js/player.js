@@ -50,7 +50,7 @@ function updateOsd() {
     // Épisode suivant : bouton proposé au début du générique
     if (!player.nextShown && !player.nextDismissed && player.resumeReady && avState() === 'PLAYING' && dur) {
       var creditsAt = player.creditsAt != null ? player.creditsAt : creditsStart(null, dur);
-      if (cur >= creditsAt && nextFile()) showNextEpisode();
+      if (cur >= creditsAt && (nextFile() || searchableEpisode())) showNextEpisode();
     }
     updateSkipIntro(cur);
     // Série de sauts terminée : retenue comme générique de la série si elle est plausible, sinon oubliée
@@ -72,9 +72,16 @@ function nextFile() {
   return i >= 0 && i + 1 < ft.files.length ? ft.files[i + 1] : null;
 }
 
+// Épisode sans fichier suivant dans le dossier : le bouton cherche la suite sur c411 (pas pour une bande-annonce)
+function searchableEpisode() {
+  var info = player.file && !player.file.url ? episodeInfo(player.file.name) : null;
+  return !!(info && info.episode != null);
+}
+
 function showNextEpisode() {
   hideSkipIntro();
   player.nextShown = true;
+  $('next-episode').firstChild.textContent = nextFile() ? 'Lire l\'épisode suivant' : 'Chercher l\'épisode suivant';
   $('next-episode').classList.add('show');
   if (!menuOpen()) $('next-episode').focus();
   debug('info', 'épisode suivant proposé', { position: webapis.avplay.getCurrentTime(), generique: player.creditsAt });
@@ -161,15 +168,18 @@ function dismissNextEpisode() {
 }
 
 function playNextEpisode() {
-  var next = nextFile(), task = player.task;
-  if (!next) { hideNextEpisode(); return; }
+  var next = nextFile(), task = player.task, file = player.file;
+  if (!next && !searchableEpisode()) { hideNextEpisode(); return; }
   // L'épisode en cours est considéré comme terminé : vu, et sans position de reprise
-  markWatched(task, player.file.name);
-  clearPosition(task, player.file);
+  if (task) markWatched(task, file.name);
+  clearPosition(task, file);
   player.resumeReady = false;
   hideNextEpisode();
+  if (next) { stopPlayback(); play(next, 'files', task); return; }
+  var folder = player.returnTo === 'files' && state.filesTask ? state.filesTask.task.name : '';
+  var src = { name: file.name, title: seriesTitle(file.name, folder), alias: player.c411 };
   stopPlayback();
-  play(next, 'files', task);
+  openNextEpisodeSearch(src);
 }
 
 // Curseur de la barre de lecture : position réelle, ou position visée pendant un déplacement
@@ -450,7 +460,7 @@ function playerKey(e) {
     else if (code === KEY.BACK || code === KEY.LEFT || code === KEY.RIGHT) closeMenu();
     return;
   }
-  // Bouton « Lire l'épisode suivant » sélectionné : OK lance, RETOUR écarte, ◀ ▲ reviennent aux contrôles
+  // Bouton « Lire / Chercher l'épisode suivant » sélectionné : OK lance, RETOUR écarte, ◀ ▲ reviennent aux contrôles
   if (document.activeElement === $('next-episode') && $('next-episode').classList.contains('show')) {
     if (code === KEY.ENTER) { playNextEpisode(); return; }
     if (code === KEY.BACK) { dismissNextEpisode(); return; }
