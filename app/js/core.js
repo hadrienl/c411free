@@ -50,7 +50,9 @@ var ICON_PATHS = {
   audio: '<path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M16 9a4 4 0 0 1 0 6m2-8a7 7 0 0 1 0 10"/>',
   subtitles: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M6 12h5m2 0h5M6 16h8m2 0h2"/>',
   back: '<path d="m9 6-6 6 6 6"/><path d="M4 12h10a6 6 0 0 1 6 6"/>',
-  bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>'
+  bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>',
+  prev: '<path d="m15 5-7 7 7 7"/>',
+  next: '<path d="m9 5 7 7-7 7"/>'
 };
 function iconSvg(name, extraClass) {
   var body = ICON_PATHS[name] || ICON_PATHS.movie;

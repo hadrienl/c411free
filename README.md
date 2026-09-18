@@ -10,6 +10,8 @@ App pour TV Samsung (Tizen) pensée pour la famille, entièrement pilotable à l
 - **Pour vous** (sous-onglet du Catalogue) : recommandations propres à chaque profil. Les goûts sont déduits de ce qui a été regardé et jusqu'où (film fini ou abandonné, nombre d'épisodes d'une série), à partir des genres, mots-clés, réalisateurs et acteurs des fiches TMDB de c411. Les propositions viennent de c411, sans ce qui a déjà été vu ou est déjà sur les disques, avec la raison sous chaque vignette.
 - **Suivi des séries** (sous-onglet du Catalogue) : chaque série regardée est mémorisée avec son dernier épisode vu. L'onglet affiche les séries par dernière sortie, avec leurs nouveautés sur c411 (épisodes suivants, saisons suivantes). Une série ouvre la liste de ses releases en place, nouveautés en premier ; RETOUR revient aux séries suivies.
 - **En attente** (sous-onglet du Catalogue) : sur la fiche d'un titre, « Plus tard » le met de côté sans le télécharger. L'onglet liste ces titres, du plus récent au plus ancien ; le signet disparaît dès que le titre est envoyé à la Freebox.
+- **Toutes les versions** (bouton loupe de la fiche) : toutes les releases du même film ou de la même série sur c411 (même affiche TMDB, ou même titre et même année pour un film), de la plus récente à la plus ancienne, à la place de la grille ; RETOUR revient à l'affichage précédent. Pratique pour trouver le premier épisode ou une autre qualité. Les filtres du Catalogue ne s'y appliquent pas.
+- **Épisode précédent / suivant** (fiche d'un épisode ou d'une saison) : « Précédent · S04E02 », « Suivant · S04E04 », avec passage à la saison voisine (S04E01 → dernier épisode de la saison 3). Un épisode absent est remplacé par le pack de sa saison, sinon par l'épisode disponible le plus proche ; parmi plusieurs releases, la plus proche de celle affichée (définition, langue, son lisible). Les boutons n'apparaissent que si l'épisode existe sur c411.
 - **Filtre familial** : aucun contenu adulte, même mal classé sur c411.
 - **Bande-annonce** dans la fiche : MP4 d'AlloCiné lu dans le lecteur de l'app (RETOUR revient à la fiche), sinon ouverture de l'app YouTube de la TV.
 - **Téléchargement** : envoi du .torrent au téléchargeur de la Freebox Ultra.
@@ -35,6 +37,7 @@ app/                  App TV (Tizen, HTML/JS sans dépendance ni build)
     tracks.js         Logique pure du lecteur : langues, préférences, générique, sous-titres
     sections.js       Sections, sous-onglets et recherche : état de navigation et fonctions pures
     nav.js            Navigation à la télécommande, en-tête, fenêtre modale, touches
+    related.js        Autres versions d'un titre et épisodes voisins d'une release
     catalog.js        Catalogue : accueil, filtres, recherche, fiche, envoi à la Freebox
     library.js        Bibliothèque et liste des fichiers d'un dossier
     delete.js         Menu d'une ligne et suppression

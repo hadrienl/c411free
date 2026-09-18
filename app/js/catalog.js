@@ -243,7 +243,7 @@ function loadMoreIfNeeded(gridId) {
   var wrap = grid.parentNode;
   var index = Array.prototype.indexOf.call(cards, document.activeElement);
   var nearEnd = index >= cards.length - GRID_COLUMNS || wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - GRID_LOAD_MARGIN_PX;
-  if (!nearEnd || isLocalFilterTab(currentTab()) || state.seriesOpen != null) return; // listes déjà complètes
+  if (!nearEnd || isLocalFilterTab(currentTab()) || state.seriesOpen != null || state.related) return; // listes déjà complètes
   if (state.query.catalog) search(false); else loadHome(false);
 }
 
@@ -277,6 +277,7 @@ function keepCatalogItem(item) {
 async function refreshHome(reset) {
   var tab = currentTab();
   updateHeroVisibility();
+  if (state.related) { if (reset) renderRelated(); return; }
   if (isLocalFilterTab(tab)) {
     if (!reset) return;
     if (tab === 'foryou') await loadForYou();
@@ -314,10 +315,11 @@ async function search(reset) {
   }
 }
 
-async function openDetail(hash) {
+// known : release déjà connue (épisode voisin) ; focusId : bouton à sélectionner dès qu'il apparaît (précédent / suivant)
+async function openDetail(hash, known, focusId) {
   state.detailFrom = 'home';
   var pick = function (list) { return (list || []).filter(function (t) { return t.infoHash === hash; })[0]; };
-  var item = pick(state.results.items) || pick(state.home.items) || {};
+  var item = known || pick(state.results.items) || pick(state.home.items) || {};
   var n = prettyName(item.name || '');
   // Affichage immédiat avec les données de la liste, puis enrichissement
   $('d-backdrop').style.backgroundImage = '';
@@ -332,21 +334,28 @@ async function openDetail(hash) {
   state.detail = { infoHash: hash, name: item.name, size: item.size, seeders: item.seeders, language: item.language, posterUrl: item.posterUrl, subcategory: item.subcategory };
   renderLaterButton();
   $('d-trailer').classList.add('off');
-  show('detail', $('d-download'));
+  $('d-prev').classList.add('off');
+  $('d-next').classList.add('off');
+  show('detail', $('d-download')); // « Précédent » / « Suivant » reprennent le focus quand ils réapparaissent (loadNeighbours)
 
   try {
     var d = await c411('/api/torrents/' + hash);
     if (state.detail.infoHash !== hash) return;
     var meta = d.metadata || {};
     var tmdb = meta.tmdbData || {};
+    n = prettyName(d.name || item.name || ''); // ouverte depuis le bandeau : la release n'était connue que par son hash
     state.detail = {
       infoHash: hash, name: d.name, size: d.size,
       seeders: d.seeders != null ? d.seeders : item.seeders,
       language: d.language || item.language,
       posterUrl: tmdb.posterUrl || item.posterUrl,
-      subcategory: d.subcategory || item.subcategory // sous-catégorie retenue par « Plus tard », pour les filtres de la file d'attente
+      subcategory: d.subcategory || item.subcategory, // sous-catégorie retenue par « Plus tard », pour les filtres de la file d'attente
+      title: tmdb.title || n.title,
+      titles: [tmdb.title, tmdb.originalTitle].filter(Boolean), // noms cherchés pour « Toutes les versions »
+      year: tmdb.year || n.year
     };
     renderLaterButton();
+    loadNeighbours(hash, focusId);
 
     // Bande-annonce cherchée en arrière-plan (AlloCiné, sinon YouTube) : le bouton apparaît quand une vidéo est trouvée
     var trailerTitle = tmdb.title || n.title;
@@ -394,6 +403,80 @@ async function openDetail(hash) {
     $('d-overview').textContent = 'Fiche indisponible.';
     toast('Fiche indisponible : ' + e.message, true);
   }
+}
+
+// ---------- Toutes les versions d'un titre, épisodes voisins ----------
+state.related = null; // versions d'un titre affichées en place dans la grille de l'accueil : { title, hash, items }
+
+function detailRef(d) { return relatedRef(d.name, d.titles, d.posterUrl, d.year); }
+
+// Boutons « Précédent · S04E02 » et « Suivant · S04E04 », affichés quand l'épisode existe sur c411
+async function loadNeighbours(hash, focusId) {
+  var d = state.detail, info = episodeInfo(d.name);
+  if (!info || info.complete) return;
+  var found;
+  try { found = await searchNeighbours(detailRef(d), d); } catch (e) { debug('error', 'épisodes voisins : ' + e.message); return; }
+  if (!state.detail || state.detail.infoHash !== hash) return;
+  state.detail.neighbours = found;
+  [['prev', 'Précédent'], ['next', 'Suivant']].forEach(function (x) {
+    var el = $('d-' + x[0]), n = found[x[0]];
+    el.classList.toggle('off', !n);
+    if (!n) return;
+    var text = '<span>' + esc(x[1] + ' · ' + episodeCode(n.info)) + '</span>';
+    el.innerHTML = x[0] === 'prev' ? iconSvg('prev') + text : text + iconSvg('next');
+  });
+  // Arrivé par « Précédent » ou « Suivant » : le même bouton reste sélectionné pour enchaîner, si l'on n'a pas bougé
+  if (focusId && document.activeElement === $('d-download') && !$(focusId).classList.contains('off')) $(focusId).focus();
+  else if (focusId && document.activeElement === $('d-download')) $('d-related').focus();
+}
+
+function openNeighbour(dir) {
+  var n = state.detail && state.detail.neighbours && state.detail.neighbours[dir];
+  if (n) openDetail(n.release.infoHash, n.release, 'd-' + dir);
+}
+
+// Toutes les releases du film ou de la série, des plus récentes aux plus anciennes, à la place de la grille de l'accueil.
+// Les filtres du Catalogue ne s'y appliquent pas : c'est une demande explicite depuis une fiche.
+async function openRelated() {
+  var d = state.detail;
+  if (!d || !d.name) return;
+  var rel = { title: d.title || prettyName(d.name).title, hash: d.infoHash, items: null };
+  state.related = rel;
+  var b = state.results;
+  b.generation = (b.generation || 0) + 1; b.loading = false; b.done = true; b.q = ''; b.items = []; b.newHashes = null;
+  updateHeroVisibility();
+  renderHomeTitle('Toutes les versions de « ' + rel.title + ' »', 'RETOUR revenir');
+  $('home-grid').innerHTML = '<div class="empty">Recherche des versions de « ' + esc(rel.title) + ' » sur c411…</div>';
+  $('home-grid').parentNode.scrollTop = 0;
+  var tab = $('tab-' + currentTab());
+  show('home', tab);
+  try {
+    rel.items = (await searchRelated(detailRef(d))).releases;
+  } catch (e) {
+    rel.items = [];
+    toast('Recherche impossible : ' + e.message, true);
+  }
+  if (state.related !== rel) return;
+  renderRelated();
+  var first = $('home-grid').querySelector('[data-f]');
+  if (first && state.screen === 'home' && document.activeElement === tab) first.focus({ preventScroll: true });
+}
+
+function renderRelated() {
+  var rel = state.related, b = state.results;
+  if (!rel.items) return; // recherche en cours
+  b.items = rel.items; b.total = b.items.length; b.lastBatch = b.items.length;
+  b.newHashes = null;
+  renderHomeTitle('« ' + rel.title + ' » · ' + b.total + ' version(s), des plus récentes aux plus anciennes', 'RETOUR revenir');
+  renderGrid('home-grid', 'h-', b, false);
+  if (!b.items.length) $('home-grid').innerHTML = '<div class="empty">Aucune autre version trouvée sur c411.</div>';
+}
+
+function closeRelated() {
+  state.related = null;
+  var tab = $('tab-' + currentTab());
+  if (tab) tab.focus();
+  refreshHome(true);
 }
 
 function renderLaterButton() {

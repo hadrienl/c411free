@@ -79,6 +79,7 @@ html.playing, html.playing body { background: transparent; }
 .badge.warn { background: #4a340b; color: var(--warn); }
 .d-audio { font-size: 24px; color: var(--muted); margin-top: 6px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .actions { display: flex; gap: 24px; flex: none; }
+.actions + .actions { margin-top: 24px; }
 
 .item { display: flex; align-items: center; gap: 26px; padding: 16px 26px; margin: 0 0 12px; border-radius: 16px; background: var(--panel); border: 4px solid transparent; }
 .item:focus { border-color: var(--accent); background: var(--panel-2); }

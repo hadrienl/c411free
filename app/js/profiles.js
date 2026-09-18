@@ -130,6 +130,7 @@ function applyProfileChange() {
   ensureHistoryBackfill();
   state.follow.list = [];
   state.seriesOpen = null;
+  state.related = null;
   forgetLater();
   if (state.screen === 'home') refreshHome(true);
   debug('info', 'profil sélectionné', { id: loadProfiles().currentId });
