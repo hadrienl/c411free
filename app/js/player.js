@@ -499,7 +499,15 @@ function playerKey(e) {
       else move(code === KEY.LEFT ? 'left' : 'right', '#controls [data-f]'); // la barre de lecture ne se sélectionne qu'avec ▲
       break;
     case KEY.UP:
-      if (!osdHidden && !onBar) $('seekbar').focus(); // des boutons vers la barre de lecture
+      if (onBar) {                        // depuis la barre de lecture : ▲ rejoint le bouton affiché au-dessus, sinon masque les contrôles
+        scrubCancel();
+        var above = document.querySelector('#next-episode.show, #skip-intro.show');
+        if (above) { above.focus(); break; }
+        clearTimeout(player.osdTimer);
+        $('osd').classList.add('hidden');
+        return;
+      }
+      if (!osdHidden) $('seekbar').focus(); // des boutons vers la barre de lecture
       break;
     case KEY.DOWN:
       if (onBar) { scrubCancel(); $('ctl-play').focus(); }
